@@ -615,7 +615,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
 // (!)️ REEMPLAZÁ ESTA URL CON LA NUEVA QUE TE DA GOOGLE DESPUÉS DE DEPLOYAR
-const GAS = 'https://script.google.com/macros/s/AKfycbxf2anX7nuiGsoEv20rV4IYdO_dTrX_hmvQ2ALlUAL6-KY0kiW3YYZioat5d8YhCbst/exec';
+const GAS = 'https://script.google.com/macros/s/AKfycbz289ENKqzDPBJflRwkkO7I3pn-NHevfV96PYnujpew1i0x2NiExFxqGfgrFJHSkEon/exec';
 
 const SOJA_CURVE_SYMS = [
   'ZSK26.CBT','ZSN26.CBT','ZSQ26.CBT','ZSU26.CBT',
@@ -1711,27 +1711,67 @@ function openDetail(id) {
 
   } else if (id === 6) {
     var es=r.exportSales||{}, br6=(r.brazilExports&&r.brazilExports.brasChina)?r.brazilExports.brasChina:null;
-    html+=detLayer('USA → China · USDA ESR '+(es.live?'live':'fallback'),[
+
+    // ── Panel 1: Volumen absoluto USA→China ──
+    html+=detLayer('USA → China · Volumen absoluto (USDA ESR '+(es.live?'live':'fallback')+')',[
       {k:'Embarcado acum. MY26',v:es.accumMt!=null?es.accumMt.toFixed(2)+' Mt':'--',cls:(es.accumVsYrPct||0)>10?'up':(es.accumVsYrPct||0)<-15?'dn':'nt'},
-      {k:'Embarcado vs año ant.',v:es.accumVsYrPct!=null?fmtPct(es.accumVsYrPct):'--',cls:(es.accumVsYrPct||0)>10?'up':(es.accumVsYrPct||0)<-15?'dn':'nt'},
+      {k:'Embarcado vs año ant. (volumen)',v:es.accumVsYrPct!=null?fmtPct(es.accumVsYrPct):'--',cls:(es.accumVsYrPct||0)>10?'up':(es.accumVsYrPct||0)<-15?'dn':'nt'},
       {k:'Comprometido pendiente',v:es.outstMt!=null?es.outstMt.toFixed(2)+' Mt':'--',cls:(es.outstVsYrPct||0)>20?'up':(es.outstVsYrPct||0)<-20?'dn':'nt'},
-      {k:'Comp. vs año ant.',v:es.outstVsYrPct!=null?fmtPct(es.outstVsYrPct):'--',cls:(es.outstVsYrPct||0)>20?'up':(es.outstVsYrPct||0)<-20?'dn':'nt'},
+      {k:'Comp. pendiente vs año ant.',v:es.outstVsYrPct!=null?fmtPct(es.outstVsYrPct):'--',cls:(es.outstVsYrPct||0)>20?'up':(es.outstVsYrPct||0)<-20?'dn':'nt'},
       {k:'Comprometido total MY26',v:es.commitMt!=null?es.commitMt.toFixed(2)+' Mt':'--'},
       {k:'Comp. total vs año ant.',v:es.commitVsYrPct!=null?fmtPct(es.commitVsYrPct):'--',cls:(es.commitVsYrPct||0)>0?'up':(es.commitVsYrPct||0)<-20?'dn':'nt'},
-      {k:'Semana',v:es.weekEnding||'--'},
-      {k:'Análisis',v:'Caída estructural -44% comprometido. Sep/Oct/Nov25: CERO embarques. No es arrastre Trump deal.'},
     ]);
+
+    // ── Panel 2: Market share USA en importaciones chinas ──
+    html+=detLayer('USA → China · Market share (métrica más representativa)',[
+      {k:'Market share USA MY26',
+       v:es.mktShareUSA!=null?es.mktShareUSA.toFixed(1)+'% de imp. China':'--',
+       cls:(es.mktShareUSA||0)<8?'dn':(es.mktShareUSA||0)>18?'up':'nt'},
+      {k:'Market share MY25 (misma semana)',
+       v:es.mktShareUSAPrev!=null?es.mktShareUSAPrev.toFixed(1)+'%':'--'},
+      {k:'Variación market share',
+       v:es.mktShareDiff!=null?(es.mktShareDiff>=0?'+':'')+es.mktShareDiff.toFixed(1)+' pp':'--',
+       cls:(es.mktShareDiff||0)>0?'up':(es.mktShareDiff||0)<-3?'dn':'nt'},
+      {k:'Base importaciones China',v:'MY26=112Mt (PSD) · MY25=109Mt (PSD)'},
+      {k:'Lectura',v:'USA perdío '+(es.mktShareDiff!=null?Math.abs(es.mktShareDiff).toFixed(1):'-')+' pp de participación en compras chinas vs año anterior. Más representativo que la variación en Mt.'},
+    ]);
+
+    // ── Panel 3: MY27 anticipado (año completo) ──
+    var my27 = r.my27 || {};
+    html+=detLayer('MY27 anticipado · Próxima campaña completa (sep 2026 — ago 2027)',[
+      {k:'Comprometido total MY27',
+       v:my27.totalCommitMt!=null?my27.totalCommitMt.toFixed(2)+' Mt':'0.00 Mt',
+       cls:(my27.totalCommitMt||0)>1?'up':(my27.totalCommitMt||0)===0?'dn':'nt'},
+      {k:'Outstanding MY27',
+       v:my27.outstandingMt!=null?my27.outstandingMt.toFixed(2)+' Mt':'0.00 Mt'},
+      {k:'MY26 anticipado (mismo momento del año pasado)',
+       v:'0.00 Mt',
+       cls:'nt'},
+      {k:'Promedio histórico anticipado (referencia)',
+       v:'~2–5 Mt (campañas normales)',
+       cls:'nt'},
+      {k:'Semanas con datos',
+       v:my27.weeks!=null?(my27.weeks>0?my27.weeks+' semanas':'Sin datos aún'):'--'},
+      {k:'Lectura',
+       v:my27.note||(my27.totalCommitMt||0)===0
+        ?'China NO tiene ningún compromiso registrado para MY27 (sep26-ago27). Históricamente a esta altura ya hay compras anticipadas cuando la relación comercial es normal. Combinado con la caída de market share MY26, confirma reorientación estructural hacia Brasil/Argentina.'
+        :'China ya firmó '+(my27.totalCommitMt||0).toFixed(2)+' Mt para MY27.',
+       cls:(my27.totalCommitMt||0)===0?'dn':'up'},
+    ]);
+
     if(br6){html+=detLayer('Brasil → China · MDIC '+(br6.live?'live':'estimado'),[
       {k:'Embarcado acum. 2026',v:br6.totalMt!=null?br6.totalMt.toFixed(2)+' Mt':'--'},
       {k:'Último mes',v:br6.lastMonth||'--'},
       {k:'% proy. WASDE',v:br6.pcDeProyeccion!=null?br6.pcDeProyeccion+'%':'--'},
       {k:'Interpretación',v:br6.interpretacion||'--'},
     ]);}
+
     html+='<div style="grid-column:1/-1;margin-top:14px"><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">Flujo semanal USA→China vs mensual Brasil→China</div>';
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
     html+='<div><div style="font-size:9px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase">USA→China · acum. semanal MY26</div><div style="height:190px"><canvas id="cn-esr-chart"></canvas></div></div>';
     html+='<div><div style="font-size:9px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase">Brasil→China · mensual 2026</div><div style="height:190px"><canvas id="cn-br-chart"></canvas></div></div>';
     html+='</div><div style="font-size:9px;color:var(--text3);margin-top:4px">USA: USDA ESR '+(es.weekEnding||'--')+' · Brasil: MDIC delay ~30d</div></div>';
+
     setTimeout(function(){
       var c1=document.getElementById('cn-esr-chart');
       if(c1&&es.serie&&es.serie.length){new Chart(c1.getContext('2d'),{type:'bar',data:{labels:es.serie.map(function(s){return s.week?s.week.substring(5):'--';}),datasets:[{label:'Emb. acum. Mt',data:es.serie.map(function(s){return s.accum||0;}),backgroundColor:'rgba(21,71,160,0.75)',borderRadius:2,order:2},{label:'Comp. total Mt',data:es.serie.map(function(s){return s.commit||0;}),type:'line',borderColor:'#0a6e45',backgroundColor:'transparent',borderWidth:2,pointRadius:1,tension:.3,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:9},boxWidth:8,padding:6}},tooltip:{mode:'index',intersect:false}},scales:{x:{ticks:{font:{size:8},color:'#7e92a8',maxRotation:45},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:9},color:'#7e92a8',callback:function(v){return v+'Mt';}},grid:{color:'#f0f4f8'}}}}});}
