@@ -387,8 +387,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="g2" style="margin-top:14px;">
     <div class="card">
       <div class="ch">
-        <span class="ct">USD/BRL — curva futuros B3 <span style="font-size:10px;color:var(--text3)">spot 5.0867 · abr 2026</span></span>
-        <span class="cb cb-ref">semanal</span>
+        <span class="ct">USD/BRL — curva futuros B3 <span style="font-size:10px;color:var(--text3)">spot 4.9924 · 17 abr 2026</span></span>
+        <span class="cb cb-ref">CMA Series 4 · 17/04/2026</span>
       </div>
       <div class="brl-leg">
         <div class="brl-li"><div class="brl-dot" style="background:var(--blue)"></div>Curva mercado</div>
@@ -1922,27 +1922,42 @@ function updateRatioChart() {
 function initBrlCurveChart() {
   var ctx = document.getElementById('brlCurveChart');
   if (!ctx) return;
-  // (*) HARDCODEADO: curva futuros B3 -- actualizar con datos de mercado
-  // Datos: abr 2026
-  var brlLabels = ['Spot','1M','2M','3M','4M','5M','6M','7M','8M','9M','10M','11M','1Y','18M','2Y'];
-  var brlData   = [5.0867,5.1178,5.1540,5.1935,5.2317,5.2717,5.3038,5.3417,5.3717,5.4016,5.4417,5.4717,5.5056,5.7101,5.9295];
+  // (*) HARDCODEADO: Curva Forward BRL/USD — fin de mes
+  // Fuente: CMA Series 4 · Ultima actualizacion: 17/04/2026
+  // Interpolacion lineal entre puntos CMA a cierres de mes exactos
+  // Feb'27 extrapolado (mas alla de 300D)
+  var brlLabels = ['Spot',"Abr'26","May'26","Jun'26","Jul'26","Ago'26","Sep'26","Oct'26","Nov'26","Dic'26","Ene'27","Feb'27"];
+  var brlData   = [4.9924, 5.0059, 5.0396, 5.0740, 5.1109, 5.1484, 5.1834, 5.2168, 5.2485, 5.2812, 5.3162, 5.3491];
+  var eomDates  = ['17/4/2026','30/4','31/5','30/6','31/7','31/8','30/9','31/10','30/11','31/12','31/1/2027','28/2/2027'];
   new Chart(ctx.getContext('2d'), {
-    type:'line',
-    data:{ labels:brlLabels, datasets:[
-      { data:brlData, borderColor:'#1547a0', backgroundColor:'#1547a014', borderWidth:2.5,
-        pointRadius:3, pointBackgroundColor:'#1547a0', tension:.35, fill:true },
-      { data:Array(brlLabels.length).fill(5.20), borderColor:'#b83232',
-        borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false,
-        label:'Ref. competitividad SA' },
+    type: 'line',
+    data: { labels: brlLabels, datasets: [
+      { label: 'Forward BRL/USD (fin de mes)',
+        data: brlData, borderColor: '#1547a0', backgroundColor: '#1547a014',
+        borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#1547a0',
+        tension: .2, fill: true },
+      { label: 'Ref. competitividad (~5.20)',
+        data: Array(brlLabels.length).fill(5.20), borderColor: '#b83232',
+        borderDash: [6,4], borderWidth: 1.5, pointRadius: 0, fill: false },
     ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false},
-        tooltip:{ callbacks:{ label:function(c){ return ' '+c.parsed.y.toFixed(4)+' BRL/USD'; }}}},
-      scales:{
-        x:{ ticks:{font:{size:9},color:'#7e92a8',maxRotation:45}, grid:{color:'#e1e6ef'} },
-        y:{ ticks:{font:{size:10},color:'#7e92a8',callback:function(v){return v.toFixed(2);}},
-          grid:{color:'#e1e6ef'}, min:4.90, max:6.10, position:'right' }
-      }}
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom',
+          labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+        tooltip: { callbacks: {
+          label: function(c) {
+            var d = eomDates[c.dataIndex] || '';
+            return ' ' + c.parsed.y.toFixed(4) + ' BRL/USD' + (d ? '  (' + d + ')' : '');
+          }
+        }}
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, color: '#7e92a8', maxRotation: 0 }, grid: { color: '#e1e6ef' } },
+        y: { ticks: { font: { size: 10 }, color: '#7e92a8',
+              callback: function(v) { return v.toFixed(3); } },
+          grid: { color: '#e1e6ef' }, min: 4.92, max: 5.42, position: 'right' }
+      }
+    }
   });
 }
 
@@ -2123,17 +2138,18 @@ var SRC_INIT=false;
 function initSources(){
   if(SRC_INIT)return; SRC_INIT=true;
   var apis=[
-    {name:'Frankfurter FX',     url:'https://api.frankfurter.app/latest',         mod:'Mod 1'},
-    {name:'FRED API',           url:'https://api.stlouisfed.org/fred/series?series_id=CPIAUCSL&api_key=9158d27c5e6761fdf7c3838e520f9ee2&file_type=json', mod:'Mod 2'},
-    {name:'CFTC Socrata',       url:'https://publicreporting.cftc.gov/resource/jun7-fc8e.json?$limit=1', mod:'Mod 3'},
-    {name:'Open-Meteo',         url:'https://api.open-meteo.com/v1/forecast?latitude=-23&longitude=-51&current=temperature_2m', mod:'Mods 4-5'},
-    {name:'MDIC Comexstat',     url:'https://api-comexstat.mdic.gov.br/general/dates/updated', mod:'Mod 6'},
-    {name:'USDA FAS (Deno)',    url:'https://empty-snake-87.carlosgomeza1999.deno.net/?url='+encodeURIComponent('https://api.fas.usda.gov/api/esr/datareleasedates?api_key=5QePROtQjFflJbif2J4T1ilxdgbcfwLPyC7QFFG6'), mod:'Mod 6'},
+    {name:'Frankfurter FX',  url:null, mod:'Mod 1', gasOnly:true},
+    {name:'FRED API',        url:null, mod:'Mod 2', gasOnly:true},
+    {name:'CFTC Socrata',    url:'https://publicreporting.cftc.gov/resource/jun7-fc8e.json?$limit=1', mod:'Mod 3'},
+    {name:'Open-Meteo',      url:'https://api.open-meteo.com/v1/forecast?latitude=-23&longitude=-51&current=temperature_2m', mod:'Mods 4-5'},
+    {name:'MDIC Comexstat',  url:'https://api-comexstat.mdic.gov.br/general/dates/updated', mod:'Mod 6'},
+    {name:'USDA FAS (Deno)', url:'https://empty-snake-87.carlosgomeza1999.deno.net/?url='+encodeURIComponent('https://api.fas.usda.gov/api/esr/datareleasedates?api_key=5QePROtQjFflJbif2J4T1ilxdgbcfwLPyC7QFFG6'), mod:'Mod 6'},
   ];
   var grid=document.getElementById('src-api-grid');
   if(!grid)return;
   var res=new Array(apis.length); var done=0;
   apis.forEach(function(api,i){
+    if(api.gasOnly){finish(i,true,'vía GAS',null);return;}
     var t0=Date.now(); var tid=setTimeout(function(){finish(i,false,'Timeout',null);},8000);
     fetch(api.url,{mode:'cors'}).then(function(r){clearTimeout(tid);finish(i,r.ok,r.status+'',Date.now()-t0);}).catch(function(){clearTimeout(tid);finish(i,false,'CORS/Error',null);});
     function finish(idx,ok,msg,ms){
@@ -2142,12 +2158,15 @@ function initSources(){
     }
   });
   function render(){
-    grid.innerHTML=res.map(function(r){
-      var bg=r.ok?'var(--green-bg)':'#fef2f2', bd=r.ok?'var(--green)':'#fca5a5', dot=r.ok?'#15803d':'#b91c1c';
+    grid.innerHTML=res.map(function(r,i){
+      var isGas=apis[i]&&apis[i].gasOnly;
+      var bg=isGas?'var(--blue-bg)':r.ok?'var(--green-bg)':'#fef2f2';
+      var bd=isGas?'var(--blue)':r.ok?'var(--green)':'#fca5a5';
+      var dot=isGas?'var(--blue)':r.ok?'#15803d':'#b91c1c';
       return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:var(--radius);padding:11px 14px">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
         +'<b style="font-size:12px;color:'+dot+'">'+r.name+'</b>'
-        +'<span style="font-size:11px;font-weight:700;color:'+dot+'">'+(r.ok?'✓ OK':'✗ '+r.msg)+'</span>'
+        +'<span style="font-size:11px;font-weight:700;color:'+dot+'">'+(isGas?'→ vía GAS':r.ok?'✓ OK':'✗ '+r.msg)+'</span>'
         +'</div>'
         +'<div style="font-size:10px;color:var(--text3)">'+r.mod+(r.ms?' · '+r.ms+'ms':'')+'</div>'
         +'</div>';
