@@ -236,6 +236,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 /* CHEMICALS STRIP */
 .chem-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.basis-card.basis-strong { border-color: #6fcba0; background: var(--green-bg); }
+.basis-card.basis-weak   { border-color: #f5a0a0; background: var(--red-bg); }
+.basis-card.basis-neutral { border-color: var(--border); }
+.basis-val-pos { color: var(--green); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.basis-val-neg { color: var(--red);   font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.basis-val-neu { color: var(--text1); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.basis-hist-row { margin-top:7px; font-size:9.5px; color:var(--text3); line-height:1.6; border-top:1px solid var(--border); padding-top:5px; }
+.basis-hist-row span { display:inline-block; margin-right:6px; }
+.basis-loc-btn { font-size:10px; padding:3px 8px; border-radius:4px; border:1px solid var(--border); background:var(--surface); color:var(--text2); cursor:pointer; }
+.basis-loc-btn.active { background:var(--accent,#1547a0); color:#fff; border-color:var(--accent,#1547a0); }
 .chem-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 12px 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow); }
 .chem-name { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing:.06em; }
@@ -337,7 +347,70 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div class="cc" style="min-width:140px"><div class="cc-top"><span class="cc-sym">CCM Set26</span><span class="cc-exp">CCMU26 · B3</span></div><div class="cc-price ld" id="corn-u26-p">—</div><div class="cc-unit">BRL/saca</div><div class="cc-ch fl" id="corn-u26-s">—</div></div>
   </div>
 
-  <div class="sec">Indicadores</div>
+  <div class="sec">Basis Soja — Brasil <span style="font-size:9px;font-weight:400;color:var(--text3)">precio fisico vs CBOT frente · usc/bu · Noticias Agricolas</span></div>
+  <div class="cards" id="cards-basis-br" style="flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:4px">
+
+    <div class="cc basis-card" id="basis-paranagua" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Paranaguá</span><span class="cc-exp">FOB Puerto · PR</span></div>
+      <div class="cc-price ld" id="basis-paranagua-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-paranagua-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-paranagua-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-rondonopolis" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Rondonópolis</span><span class="cc-exp">interior · MT</span></div>
+      <div class="cc-price ld" id="basis-rondonopolis-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-rondonopolis-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-rondonopolis-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-rioverde" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Rio Verde</span><span class="cc-exp">interior · GO</span></div>
+      <div class="cc-price ld" id="basis-rioverde-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-rioverde-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-rioverde-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-brasilia" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Brasília</span><span class="cc-exp">interior · DF</span></div>
+      <div class="cc-price ld" id="basis-brasilia-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-brasilia-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-brasilia-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-naometoque" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Não-Me-Toque</span><span class="cc-exp">interior · RS</span></div>
+      <div class="cc-price ld" id="basis-naometoque-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-naometoque-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-naometoque-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-patobranco" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Pato Branco</span><span class="cc-exp">interior · PR</span></div>
+      <div class="cc-price ld" id="basis-patobranco-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-patobranco-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-patobranco-hist"></div>
+    </div>
+
+    <div class="cc basis-card" id="basis-oestebahia" style="min-width:170px">
+      <div class="cc-top"><span class="cc-sym">Oeste Bahia</span><span class="cc-exp">interior · BA</span></div>
+      <div class="cc-price ld" id="basis-oestebahia-v">—</div>
+      <div class="cc-unit">usc/bu vs CBOT</div>
+      <div style="margin-top:5px;font-size:10px;color:var(--text3)">Fisico: <span id="basis-oestebahia-r">—</span> R$/sc</div>
+      <div class="basis-hist-row" id="basis-oestebahia-hist"></div>
+    </div>
+
+  </div>
+  <div style="font-size:10px;color:var(--text3);margin-top:5px;margin-bottom:14px">
+    Conversion: R$/sc ÷ USD/BRL ÷ 2.2046 × 100 = usc/bu · <span id="basis-ts">cargando...</span>
+  </div>
+
   <div class="cards">
     <div class="cc" id="ratio-card" style="max-width:220px;">
       <div class="cc-top"><span class="cc-sym">Soja / Maíz</span><span class="cc-exp">ratio siembra</span></div>
@@ -403,10 +476,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       </div>
       <div class="brl-leg">
         <div class="brl-li"><div class="brl-dot" style="background:var(--blue)"></div>Ratio Soja Nov / Maíz Dic</div>
-        <div class="brl-li"><div class="brl-dot" style="background:#94a3b8;opacity:.7"></div>Rango normal 2.0–2.6</div>
+        <div class="brl-li"><div class="brl-dot" style="background:#94a3b8;opacity:.7"></div>Zonas Maiz (2.3) / Soja (2.5)</div>
       </div>
       <div class="cw"><canvas id="ratioChart"></canvas></div>
     </div>
+  </div>
+
+  <!-- Basis Soja Brasil — gráfico histórico full width -->
+  <div class="card" style="margin-top:14px;grid-column:1/-1;">
+    <div class="ch" style="flex-wrap:wrap;gap:10px;align-items:flex-start;">
+      <div>
+        <span class="ct">Basis Soja Brasil — histórico 2 años</span>
+        <span class="cb cb-ref" style="margin-left:8px;">Planilla GSheets · usc/bu vs CBOT</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-left:auto;">
+        <button class="basis-loc-btn active" data-loc="paranagua"    onclick="setBasisChartLoc(this)">Paranaguá</button>
+        <button class="basis-loc-btn"        data-loc="rondonopolis" onclick="setBasisChartLoc(this)">Rondonópolis</button>
+        <button class="basis-loc-btn"        data-loc="rioverde"     onclick="setBasisChartLoc(this)">Rio Verde</button>
+        <button class="basis-loc-btn"        data-loc="brasilia"     onclick="setBasisChartLoc(this)">Brasília</button>
+        <button class="basis-loc-btn"        data-loc="naometoque"   onclick="setBasisChartLoc(this)">Não-Me-Toque</button>
+        <button class="basis-loc-btn"        data-loc="patobranco"   onclick="setBasisChartLoc(this)">Pato Branco</button>
+        <button class="basis-loc-btn"        data-loc="oestebahia"   onclick="setBasisChartLoc(this)">Oeste Bahia</button>
+      </div>
+    </div>
+    <div class="brl-leg" style="margin-top:8px;">
+      <div class="brl-li"><div class="brl-dot" style="background:var(--blue)"></div>Basis diaria</div>
+      <div class="brl-li"><div class="brl-dot" style="background:#94a3b8;opacity:.9"></div>Avg 5 años</div>
+      <div class="brl-li"><div class="brl-dot" style="background:#f59e0b;opacity:.9"></div>Avg 2024</div>
+      <div class="brl-li"><div class="brl-dot" style="background:#ef4444;opacity:.8"></div>Min 5a</div>
+      <div class="brl-li"><div class="brl-dot" style="background:#22c55e;opacity:.8"></div>Max 5a</div>
+    </div>
+    <div style="height:220px;margin-top:10px;"><canvas id="basisHistChart"></canvas></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;" id="basis-chart-stats">Cargando histórico...</div>
   </div>
 
   <!-- COT + Clima -->
@@ -615,7 +716,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────
 // (!)️ REEMPLAZÁ ESTA URL CON LA NUEVA QUE TE DA GOOGLE DESPUÉS DE DEPLOYAR
-const GAS = 'https://script.google.com/macros/s/AKfycbz289ENKqzDPBJflRwkkO7I3pn-NHevfV96PYnujpew1i0x2NiExFxqGfgrFJHSkEon/exec';
+const GAS = 'https://script.google.com/macros/s/AKfycbxjehzCzJ02gldXBJCto-W6VeOCBbvnfF59wxR_etvtfbnmXoWYAxvtLY_tH7BVlf4h/exec';
 
 const SOJA_CURVE_SYMS = [
   'ZSK26.CBT','ZSN26.CBT','ZSQ26.CBT','ZSU26.CBT',
@@ -690,6 +791,8 @@ function refreshAll(){
   fetchWeather();
   fetchNews();
   fetchCOT();
+  fetchBasisBrasil();
+  fetchBasisHistory();
 }
 
 // ── PRICES ────────────────────────────────────────────────────────
@@ -1268,10 +1371,31 @@ function fetchSmf5() {
       ' '+(r.weather&&r.weather.phase?r.weather.phase:'NASS + Open-Meteo'),
       r.sig==='g'?'ALCISTA ^ (merma oferta)':r.sig==='r'?'BAJISTA v (exceso oferta)':'NEUTRAL'
     );
+    // Card siembra USA en dashboard principal
+    var cp = r.cropProgress || {};
+    var cpEl = document.getElementById('crop-prog-val');
+    var cpPrev = document.getElementById('crop-prog-prev');
+    var cpYoy = document.getElementById('crop-prog-yoy');
+    var cpWeek = document.getElementById('crop-prog-week');
+    if (cpEl) {
+      if (cp.gPlusE != null && cp.gPlusE > 0) {
+        cpEl.textContent = cp.gPlusE + '%';
+        cpEl.className = 'cc-price ' + (cp.gPlusE >= 65 ? 'dn' : cp.gPlusE < 50 ? 'up' : '');
+        if (cpPrev) cpPrev.textContent = cp.gPlusEPrev != null ? cp.gPlusEPrev + '%' : '--';
+        if (cpYoy)  cpYoy.textContent  = cp.gPlusEYrAgo != null ? cp.gPlusEYrAgo + '%' : '--';
+        if (cpWeek) cpWeek.textContent = cp.weekEnding ? cp.weekEnding.substring(5) : 'NASS';
+      } else {
+        cpEl.textContent = 'Próx. mayo';
+        cpEl.className = 'cc-price ld';
+        if (cpPrev) cpPrev.textContent = '—';
+        if (cpYoy)  cpYoy.textContent  = '—';
+        if (cpWeek) cpWeek.textContent = 'NASS · inicio siembra';
+      }
+    }
     updateSummary();
   }, null, 30000);
 }
-// ── MÓDULO (6) -- Demanda China v4 (limpio) ─────────────────
+
 function fetchSmf6() {
   jcall({ section: 'smf_demand_cn' }, function(d) {
     if (!d.ok || !d.data) return;
@@ -1309,6 +1433,229 @@ function renderCornB3(d) {
   });
 }
 
+// ── BASIS SOJA BRASIL ─────────────────────────────────────────────
+// Conversion: R$/sc -> usc/bu = (spot / BRL / 2.2046) * 100 - CBOT
+
+var BASIS_LOCS = [
+  { id:'paranagua',    key:'paranagua',    label:'Paranaguá'    },
+  { id:'rondonopolis', key:'rondonopolis', label:'Rondonópolis' },
+  { id:'rioverde',     key:'rioverde',     label:'Rio Verde'    },
+  { id:'brasilia',     key:'brasilia',     label:'Brasília'     },
+  { id:'naometoque',   key:'naometoque',   label:'Não-Me-Toque' },
+  { id:'patobranco',   key:'patobranco',   label:'Pato Branco'  },
+  { id:'oestebahia',   key:'oestebahia',   label:'Oeste Bahia'  }
+];
+
+// Stats 5 años (2020-2025) desde planilla histórica -- usc/bu
+var BASIS_HIST = {
+  paranagua:    { min:-185, avg:69,   max:300,  avg1y:61  },
+  rondonopolis: { min:-472, avg:-73,  max:486,  avg1y:-91 },
+  rioverde:     { min:-520, avg:-128, max:190,  avg1y:-123},
+  brasilia:     { min:-471, avg:-130, max:77,   avg1y:-125},
+  naometoque:   { min:-363, avg:-52,  max:262,  avg1y:-72 },
+  patobranco:   { min:-838, avg:-86,  max:153,  avg1y:-97 },
+  oestebahia:   { min:-426, avg:-84,  max:232,  avg1y:-96 }
+};
+
+var basisHistData = null;  // datos históricos del GSheets
+var basisChartInst = null; // instancia Chart.js
+var basisChartLoc = 'paranagua';
+
+function fetchBasisBrasil() {
+  jcall({ section: 'basis_br' }, function(d) {
+    if (!d.ok || !d.data) { renderBasisError(); return; }
+    var payload = d.data.data || d.data;
+    renderBasisBrasil(payload);
+  }, function() { renderBasisError(); }, 25000);
+}
+
+function fetchBasisHistory() {
+  jcall({ section: 'basis_history' }, function(d) {
+    if (!d.ok || !d.data || !d.data.data) return;
+    basisHistData = d.data.data;
+    renderBasisChart(basisChartLoc);
+  }, null, 30000);
+}
+
+function renderBasisError() {
+  BASIS_LOCS.forEach(function(loc) {
+    var el = document.getElementById('basis-'+loc.id+'-v');
+    if (el) { el.className = 'cc-price ld'; el.textContent = '--'; }
+  });
+  var ts = document.getElementById('basis-ts');
+  if (ts) ts.textContent = 'Error cargando datos';
+}
+
+function renderBasisBrasil(d) {
+  var cbot = d.cbot_usc, brl = d.brl;
+  BASIS_LOCS.forEach(function(loc) {
+    var card  = document.getElementById('basis-'+loc.id);
+    var valEl = document.getElementById('basis-'+loc.id+'-v');
+    var rawEl = document.getElementById('basis-'+loc.id+'-r');
+    var histEl= document.getElementById('basis-'+loc.id+'-hist');
+    var spot  = d.spots ? d.spots[loc.key] : null;
+    var h     = BASIS_HIST[loc.key] || {};
+
+    if (rawEl && spot != null) rawEl.textContent = spot.toFixed(2);
+
+    if (spot == null || cbot == null || brl == null || brl <= 0) {
+      if (valEl) { valEl.className = 'cc-price ld'; valEl.textContent = '--'; }
+      return;
+    }
+
+    var spot_usc = (spot / brl / 2.2046) * 100;
+    var basis    = Math.round((spot_usc - cbot) * 10) / 10;
+    var basisStr = (basis >= 0 ? '+' : '') + basis.toFixed(1);
+
+    // Color basado en posición vs avg histórico (dentro/fuera de 1 stddev aprox)
+    var avg = h.avg != null ? h.avg : 0;
+    var rng = h.max != null && h.min != null ? (h.max - h.min) : 200;
+    var relPos = rng > 0 ? (basis - h.min) / rng : 0.5; // 0=min, 1=max
+    var cls, cardCls;
+    if (relPos > 0.65)      { cls = 'basis-val-pos'; cardCls = 'basis-strong'; }
+    else if (relPos < 0.35) { cls = 'basis-val-neg'; cardCls = 'basis-weak';   }
+    else                    { cls = 'basis-val-neu'; cardCls = 'basis-neutral'; }
+
+    if (valEl) { valEl.className = cls; valEl.textContent = basisStr; }
+    if (card)  { card.classList.remove('basis-strong','basis-weak','basis-neutral'); card.classList.add(cardCls); }
+
+    // Mini-stats históricos en la card
+    if (histEl && h.min != null) {
+      var vsAvg = basis - avg;
+      var vsAvgStr = (vsAvg >= 0 ? '+' : '') + vsAvg.toFixed(0);
+      var vs1y = h.avg1y != null ? (basis - h.avg1y) : null;
+      var vs1yStr = vs1y != null ? ((vs1y >= 0 ? '+' : '') + vs1y.toFixed(0) + ' vs 2024') : '';
+      histEl.innerHTML =
+        '<span>min <b>'+h.min+'</b></span>' +
+        '<span>avg <b>'+h.avg+'</b></span>' +
+        '<span>max <b>'+h.max+'</b></span>' +
+        '<br><span style="color:'+(vsAvg>=0?'var(--green)':'var(--red)')+'">'+vsAvgStr+' vs avg5a</span>' +
+        (vs1yStr ? ' <span>· '+vs1yStr+'</span>' : '');
+    }
+  });
+
+  var ts = document.getElementById('basis-ts');
+  if (ts) ts.textContent = 'USD/BRL: '+(brl?brl.toFixed(4):'--')+' · CBOT: '+(cbot?cbot.toFixed(1)+' usc/bu':'--')+' · '+(d.ts||'');
+}
+
+function setBasisChartLoc(btn) {
+  document.querySelectorAll('.basis-loc-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  basisChartLoc = btn.getAttribute('data-loc');
+  renderBasisChart(basisChartLoc);
+}
+
+function renderBasisChart(loc) {
+  var ctx = document.getElementById('basisHistChart');
+  if (!ctx) return;
+  if (!basisHistData) {
+    var statsEl = document.getElementById('basis-chart-stats');
+    if (statsEl) statsEl.textContent = 'Cargando histórico desde GSheets...';
+    return;
+  }
+  var dates = basisHistData.dates || [];
+  var vals  = basisHistData[loc]  || [];
+  var h     = BASIS_HIST[loc]     || {};
+  var avg5a = h.avg, avg1y = h.avg1y, hMin = h.min, hMax = h.max;
+  var n = dates.length;
+
+  // Rango real de los datos de la serie (para escalar el eje Y)
+  var clean = vals.filter(function(v){ return v != null; });
+  var dataMin = clean.length ? Math.min.apply(null, clean) : -200;
+  var dataMax = clean.length ? Math.max.apply(null, clean) : 100;
+  var dataRange = dataMax - dataMin || 100;
+  // Eje Y con 15% de padding arriba y abajo
+  var yMin = Math.floor((dataMin - dataRange * 0.15) / 50) * 50;
+  var yMax = Math.ceil((dataMax  + dataRange * 0.15) / 50) * 50;
+
+  // Labels con mes y año — array completo, Chart.js filtra con autoSkip
+  var monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var labels = dates.map(function(d) {
+    return d; // guardamos fecha completa, la formateamos en el callback
+  });
+
+  var lineColor = '#1547a0';
+  if (basisChartInst) { basisChartInst.destroy(); basisChartInst = null; }
+
+  basisChartInst = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        // Basis diaria
+        { data: vals, borderColor: lineColor, backgroundColor: lineColor+'15',
+          borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, spanGaps: true,
+          label: 'Basis' },
+        // Avg 5 años
+        { data: Array(n).fill(avg5a), borderColor: '#94a3b8', borderDash:[6,4],
+          borderWidth: 1.5, pointRadius: 0, fill: false, label: 'Avg 5a' },
+        // Avg 2024
+        { data: Array(n).fill(avg1y), borderColor: '#f59e0b', borderDash:[4,3],
+          borderWidth: 1.5, pointRadius: 0, fill: false, label: 'Avg 2024' },
+        // Min 5 años — solo si está dentro del rango visible de los datos
+        { data: Array(n).fill(hMin), borderColor: '#ef4444', borderDash:[2,4],
+          borderWidth: 1, pointRadius: 0, fill: false, label: 'Min 5a',
+          hidden: (hMin < dataMin - dataRange * 0.3) },
+        // Max 5 años — solo si está dentro del rango visible de los datos
+        { data: Array(n).fill(hMax), borderColor: '#22c55e', borderDash:[2,4],
+          borderWidth: 1, pointRadius: 0, fill: false, label: 'Max 5a',
+          hidden: (hMax > dataMax + dataRange * 0.3) }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(c) {
+              if (c.datasetIndex !== 0 || c.parsed.y == null) return '';
+              return (c.parsed.y >= 0 ? '+' : '') + c.parsed.y.toFixed(1) + ' usc/bu';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            font: { size: 10 }, color: '#7e92a8', maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 14,
+            callback: function(val, idx) {
+              var d = dates[idx];
+              if (!d) return '';
+              var mo = parseInt(d.substring(5,7)) - 1;
+              var yr = d.substring(2,4);
+              var mn = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+              return mo === 0 ? mn[mo]+' \''+yr : mn[mo];
+            }
+          },
+          grid: { display: false }
+        },
+        y: {
+          min: yMin, max: yMax,
+          ticks: { font:{size:10}, color:'#7e92a8', callback: function(v){ return v.toFixed(0); } },
+          grid: { color: '#e8ecf2' },
+          position: 'right'
+        }
+      }
+    }
+  });
+
+  var statsEl = document.getElementById('basis-chart-stats');
+  if (statsEl) {
+    var loc_ = BASIS_LOCS.find(function(l){ return l.key === loc; });
+    statsEl.innerHTML = '<b>' + (loc_ ? loc_.label : loc) + '</b>'
+      + ' &nbsp;·&nbsp; avg 5a: <b>' + (avg5a != null ? avg5a : '—') + '</b>'
+      + ' <span style="color:#94a3b8">— — —</span>'
+      + ' &nbsp;·&nbsp; avg 2024: <b>' + (avg1y != null ? avg1y : '—') + '</b>'
+      + ' <span style="color:#f59e0b">— — —</span>'
+      + ' &nbsp;·&nbsp; min 5a: <b style="color:#ef4444">' + (hMin != null ? hMin : '—') + '</b>'
+      + ' &nbsp;·&nbsp; max 5a: <b style="color:#22c55e">' + (hMax != null ? hMax : '—') + '</b>'
+      + ' &nbsp;(usc/bu)';
+  }
+}
+
 // ── MÓDULO QUÍMICOS -- carga bajo demanda ────────────────────────
 var SMF_CHEMICALS = null;
 function fetchChemicals(cb) {
@@ -1329,7 +1676,7 @@ function renderChemicals(d) {
     if (p) p.textContent = price != null ? '$'+price : '--';
     if (c) {
       c.textContent = chg != null ? (chg>=0?'+':'')+chg.toFixed(1)+'% vs año ant.' : '--';
-      c.className = 'chem-chg ' + (chg > 10 ? 'dn' : chg < -5 ? 'up' : 'fl');
+      c.className = 'chem-chg ' + (chg > 0 ? 'up' : chg < 0 ? 'dn' : 'fl');
     }
   }
   function setPx(prefix, sym) {
@@ -1665,17 +2012,26 @@ function openDetail(id) {
     ]);
 
     // 2. Crop Progress (en temporada) o estado off-season
-    var cropRows = r.isInSeason ? [
-      { k:'G+E esta semana', v: cp.gPlusE!=null ? cp.gPlusE+'%' : '--', cls: cp.gPlusE>=65?'dn':cp.gPlusE<50?'up':'nt' },
-      { k:'vs semana ant.', v: cp.weekDiff!=null ? (cp.weekDiff>=0?'+':'')+cp.weekDiff+'pp' : '--', cls: cp.weekDiff>0?'dn':'up' },
-      { k:'vs año anterior', v: cp.vsYrAgoDiff!=null ? (cp.vsYrAgoDiff>=0?'+':'')+cp.vsYrAgoDiff+'pp' : '--', cls: cp.vsYrAgoDiff<0?'up':'dn' },
+    var hasCropData = cp.gPlusE != null && cp.gPlusE > 0;
+    var cropRows = hasCropData ? [
+      { k:'G+E esta semana', v: cp.gPlusE+'%', cls: cp.gPlusE>=65?'dn':cp.gPlusE<50?'up':'nt' },
+      { k:'G+E semana ant.', v: cp.gPlusEPrev!=null ? cp.gPlusEPrev+'%' : '--',
+        cls: cp.gPlusEPrev>=65?'dn':cp.gPlusEPrev<50?'up':'nt' },
+      { k:'Cambio semanal', v: cp.weekDiff!=null ? (cp.weekDiff>=0?'+':'')+cp.weekDiff+'pp' : '--',
+        cls: cp.weekDiff>0?'dn':cp.weekDiff<0?'up':'nt' },
+      { k:'vs año anterior', v: cp.gPlusEYrAgo!=null ? cp.gPlusEYrAgo+'% ('+(cp.vsYrAgoDiff!=null?(cp.vsYrAgoDiff>=0?'+':'')+cp.vsYrAgoDiff+'pp':'--')+')' : '--',
+        cls: cp.vsYrAgoDiff<0?'up':cp.vsYrAgoDiff>0?'dn':'nt' },
       { k:'Semana', v: cp.weekEnding||'--' },
-      { k:'Fuente', v: cp.live?'(OK) NASS QuickStats live':'(!) Fallback' },
+      { k:'Fuente', v: cp.live?'NASS QuickStats live':'Fallback' },
+    ] : r.isInSeason ? [
+      { k:'Estado', v:'En temporada — sin datos publicados aún' },
+      { k:'Nota', v:'NASS publica Crop Progress semanalmente a partir de mayo' },
+      { k:'Próx. reporte', v:'Primera semana de mayo '+new Date().getFullYear() },
     ] : [
-      { k:'Estado', v:'Off-season -- Crop Progress no publicado' },
-      { k:'Proxima siembra', v:'~Abril '+new Date().getFullYear() },
+      { k:'Estado', v:'Off-season — Crop Progress no publicado' },
+      { k:'Próxima siembra', v:'~Mayo '+new Date().getFullYear() },
     ];
-    html += detLayer(r.isInSeason ? 'Crop Progress NASS' : 'Off-season', cropRows);
+    html += detLayer(hasCropData ? 'Avance de Siembra — USDA NASS' : r.isInSeason ? 'Avance de Siembra — USDA NASS (sin datos aún)' : 'Avance de Siembra — Off-season', cropRows);
 
     // 3. Producción resumida
     html += detLayer('Producción USA — WASDE', [
@@ -1879,7 +2235,34 @@ function resetWeights() {
 
 // ── RATIO SOJA/MAÍZ ───────────────────────────────────────────────
 // Soja Nov (ZSX) vs Maíz Dic (ZCZ) -- año actual, siguiente si ya venció
-var ratioHist = [2.61,2.62,2.60,2.61,2.61,2.60];
+var ratioHist = [];  // se llena con datos reales durante la sesion
+var ratioHistDates = []; // fechas correspondientes
+
+function fetchRatioHistory() {
+  var syms = getRatioSymbols();
+  jcall({ section: 'history', symbols: syms.soja + ',' + syms.corn }, function(d) {
+    if (!d.ok || !d.data) return;
+    var zs = d.data[syms.soja], zc = d.data[syms.corn];
+    if (!zs || !zc || !zs.data || !zc.data) return;
+    // Construir mapa de cierres por fecha para cada contrato
+    var zsMap = {}, zcMap = {};
+    zs.data.forEach(function(p){ zsMap[p.t] = p.c; });
+    zc.data.forEach(function(p){ zcMap[p.t] = p.c; });
+    // Fechas comunes, ordenadas, ultimas 40
+    var dates = Object.keys(zsMap).filter(function(t){ return zcMap[t]; }).sort();
+    dates = dates.slice(-40);
+    ratioHist = [];
+    ratioHistDates = [];
+    dates.forEach(function(t) {
+      var r = zsMap[t] / zcMap[t];
+      if (r > 0) { ratioHist.push(Math.round(r * 100) / 100); ratioHistDates.push(t); }
+    });
+    // Reinicializar el chart con datos reales
+    if (ratioChart) { ratioChart.destroy(); ratioChart = null; }
+    initRatioChart();
+    updateRatio(); // actualizar con precio live encima
+  }, function(){}, 20000);
+}
 var ratioChart = null;
 
 function getRatioSymbols() {
@@ -1919,9 +2302,11 @@ function updateRatio() {
   if (expEl)   { expEl.textContent = syms.sojaLabel + ' / ' + syms.cornLabel; }
   if (badgeEl) {
     var msg='', cls='';
-    if      (ratio<2.0){ msg='▼ Bajo -- maíz más rentable'; cls='dn'; }
-    else if (ratio>2.6){ msg='^ Alto -- soja más rentable'; cls='up'; }
-    else               { msg='✓ Rango normal (2.0–2.6)';   cls='up'; }
+    if      (ratio >= 2.5) { msg='^ Soja (ratio '+ratio.toFixed(2)+')';         cls='up'; }
+    else if (ratio >= 2.4) { msg='^ Soja/Neutro (ratio '+ratio.toFixed(2)+')';  cls='up'; }
+    else if (ratio >= 2.3) { msg='= Neutro (ratio '+ratio.toFixed(2)+')';        cls='fl'; }
+    else if (ratio >= 2.2) { msg='v Maiz/Neutro (ratio '+ratio.toFixed(2)+')';  cls='dn'; }
+    else                   { msg='v Maiz (ratio '+ratio.toFixed(2)+')';          cls='dn'; }
     badgeEl.innerHTML='<div class="cc-ch '+cls+'">'+msg+'</div>';
   }
   updateRatioChart();
@@ -1930,20 +2315,32 @@ function updateRatio() {
 function initRatioChart() {
   var ctx = document.getElementById('ratioChart');
   if (!ctx) return;
-  var n = ratioHist.length;
+  var n = Math.max(ratioHist.length, 1);
+  // Usar fechas reales si disponibles, sino labels relativos
+  var labels;
+  if (ratioHistDates.length === ratioHist.length && ratioHistDates.length > 0) {
+    labels = ratioHistDates.map(function(t) {
+      var d = new Date(t + 'T12:00:00');
+      return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+    });
+  } else {
+    labels = ratioHist.length
+      ? ratioHist.map(function(_,i){ var d=n-1-i; return i===n-1?'hoy':d===1?'ayer':'-'+d+'d'; })
+      : ['hoy'];
+  }
   ratioChart = new Chart(ctx.getContext('2d'), {
     type:'line',
-    data:{ labels: ratioHist.map(function(_,i){ var d=n-1-i; return i===n-1?'hoy':d===1?'ayer':'-'+d+'d'; }),
+    data:{ labels: labels,
       datasets:[
         { data:ratioHist.slice(), borderColor:'#1547a0', backgroundColor:'#1547a014', borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#1547a0', tension:.35, fill:true },
-        { data:Array(n).fill(2.0), borderColor:'#94a3b8', borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false },
-        { data:Array(n).fill(2.6), borderColor:'#94a3b8', borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false },
+        { data:Array(n).fill(2.3), borderColor:'#94a3b8', borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false },
+        { data:Array(n).fill(2.5), borderColor:'#94a3b8', borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false },
       ]},
     options:{ responsive:true, maintainAspectRatio:false, animation:{duration:300},
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(ctx){ return ' Ratio: '+ctx.parsed.y.toFixed(2); }}}},
       scales:{
         x:{ ticks:{font:{size:9},color:'#7e92a8'}, grid:{color:'#e1e6ef'} },
-        y:{ ticks:{font:{size:9},color:'#7e92a8',callback:function(v){return v.toFixed(2);}}, grid:{color:'#e1e6ef'}, min:1.6, max:3.2, position:'right' }
+        y:{ ticks:{font:{size:9},color:'#7e92a8',callback:function(v){return v.toFixed(2);}}, grid:{color:'#e1e6ef'}, min:1.8, max:2.8, position:'right' }
       }}
   });
 }
@@ -1951,10 +2348,21 @@ function initRatioChart() {
 function updateRatioChart() {
   if (!ratioChart) return;
   var n = ratioHist.length;
-  ratioChart.data.labels = ratioHist.map(function(_,i){ var d=n-1-i; return i===n-1?'hoy':d===1?'ayer':'-'+d+'d'; });
+  if (n === 0) return;
+  // Labels: fechas reales si disponibles, sino relativos
+  var labels;
+  if (ratioHistDates.length === n && n > 0) {
+    labels = ratioHistDates.map(function(t) {
+      var d = new Date(t + 'T12:00:00');
+      return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+    });
+  } else {
+    labels = ratioHist.map(function(_,i){ var d=n-1-i; return i===n-1?'hoy':d===1?'ayer':'-'+d+'d'; });
+  }
+  ratioChart.data.labels = labels;
   ratioChart.data.datasets[0].data = ratioHist.slice();
-  ratioChart.data.datasets[1].data = Array(n).fill(2.0);
-  ratioChart.data.datasets[2].data = Array(n).fill(2.6);
+  ratioChart.data.datasets[1].data = Array(n).fill(2.3);
+  ratioChart.data.datasets[2].data = Array(n).fill(2.5);
   ratioChart.update('none');
 }
 
@@ -2151,6 +2559,9 @@ window.addEventListener('DOMContentLoaded', function(){
     initBrlCurveChart();
     fetchChemicals();
     fetchCornB3();
+    fetchBasisBrasil();
+    fetchBasisHistory();
+    fetchRatioHistory();
     initRatioChart();
     renderCOTFallback();
     // Historial después de que todos los charts estén listos
@@ -2213,9 +2624,6 @@ function initSources(){
     }).join('');
   }
 }
-
-
-
 
 </script>
 
