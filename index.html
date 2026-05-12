@@ -322,6 +322,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <nav class="nav">
   <button class="nvb on" onclick="switchPage('dashboard',this)">Dashboard</button>
   <button class="nvb"    onclick="switchPage('semaforo',this)">Semáforo Soja</button>
+  <button class="nvb"    onclick="switchPage('paridad',this)">Basis GDM</button>
   <button class="nvb"    onclick="switchPage('sources',this)">Fuentes</button>
 </nav>
 
@@ -1180,7 +1181,7 @@ function renderCorr(){
 function switchPage(id, btn) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('on'); });
   document.querySelectorAll('.nvb').forEach(function(b){ b.classList.remove('on'); });
-  var p = document.getElementById('page-'+id);
+  if (id === 'paridad') { setTimeout(gdmInit, 50); } var p = document.getElementById('page-'+id);
   if (p) p.classList.add('on');
   if (btn) btn.classList.add('on');
   if (id === 'semaforo') renderSemaforo();
@@ -2600,6 +2601,781 @@ function renderBasisChart(loc) {
 
 
 </script>
+
+
+
+
+<!-- PAGE: PARIDAD GDM -->
+<style>
+#page-paridad .inputs-wrap{background:#ffffff;border:1px solid #d0d7de;border-radius:8px;padding:16px 18px;margin-bottom:14px;}
+#page-paridad .inputs-title{font-size:11px;color:#1a1a1a;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+#page-paridad .inputs-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;}
+#page-paridad .inputs-row:last-child{margin-bottom:0;}
+#page-paridad .inp-group{display:flex;flex-direction:column;gap:4px;}
+#page-paridad .inp-group label{font-size:10px;color:#444;font-weight:600;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+#page-paridad .inp-group input{background:#f6f8fa;border:1px solid #d0d7de;color:#1a1a1a;border-radius:5px;padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;width:120px;outline:none;}
+#page-paridad .inp-group input:focus{border-color:#0969da;box-shadow:0 0 0 2px rgba(9,105,218,.15);}
+#page-paridad .btn-calc{padding:7px 18px;background:#0969da;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;align-self:flex-end;}
+#page-paridad .btn-calc:hover{background:#0860ca;}
+#page-paridad .tag{font-size:9px;border-radius:3px;padding:1px 5px;font-weight:700;margin-left:3px;vertical-align:middle;}
+#page-paridad .tag.live{background:#2da44e;color:#fff;}
+#page-paridad .tag.man{background:#bf8700;color:#fff;}
+#page-paridad .status-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+#page-paridad .s-item{display:flex;align-items:center;gap:5px;}
+#page-paridad .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+#page-paridad .dot.ok{background:var(--green);}
+#page-paridad .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+#page-paridad table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+#page-paridad thead tr.hdr-group th{padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:.05em;color:#fff;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);}
+#page-paridad thead tr.hdr-group th.h-empty{background:#1c2128;}
+#page-paridad thead tr.hdr-group th.h-spot{background:#1a3a6e;}
+#page-paridad thead tr.hdr-group th.h-basis{background:#1a3322;}
+#page-paridad thead tr.hdr-group th.h-fwd{background:#3a2a0a;}
+#page-paridad thead tr.hdr-group th.h-gdm{background:#2a1040;}
+#page-paridad thead tr.hdr-sub th{padding:7px 10px;font-size:9px;font-weight:500;color:var(--text2);background:var(--surface2);text-align:right;white-space:nowrap;border-bottom:2px solid var(--border);}
+#page-paridad thead tr.hdr-sub th:first-child{text-align:left;}
+#page-paridad td:nth-child(4),#page-paridad th:nth-child(4){border-left:1px solid rgba(255,255,255,.06);}
+#page-paridad td:nth-child(6),#page-paridad th:nth-child(6){border-left:1px solid rgba(255,255,255,.06);}
+#page-paridad td:nth-child(9),#page-paridad th:nth-child(9){border-left:1px solid rgba(255,255,255,.06);}
+#page-paridad tbody tr{border-bottom:1px solid var(--border);}
+#page-paridad tbody tr:hover td{background:var(--surface2)!important;}
+#page-paridad tr.row-loc td{background:var(--surface);}
+#page-paridad tr.row-pond{border-top:2px solid var(--gold);}
+#page-paridad tr.row-pond td{background:var(--surface2);font-weight:700;}
+#page-paridad td{padding:7px 10px;text-align:right;color:var(--text2);white-space:nowrap;}
+#page-paridad td:first-child{text-align:left;color:var(--text1);min-width:155px;font-size:11px;}
+#page-paridad td.spot{color:var(--blue);}
+#page-paridad td.basis{color:var(--text2);}
+#page-paridad td.basis-neg{color:var(--red);}
+#page-paridad td.fwd{color:var(--gold);}
+#page-paridad td.gdm{color:#bc8cff;}
+#page-paridad td.pos{color:var(--green);font-weight:600;}
+#page-paridad td.neg-v{color:var(--red);font-weight:600;}
+#page-paridad td.z{color:var(--text3);}
+#page-paridad .note{margin-top:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.9;}
+#page-paridad .note b{color:var(--text1);}
+</style>
+<div class="page" id="page-paridad" style="padding:16px">
+<div class="header">
+  <div>
+    <h1>SOJA BRASILEÑA · <span>FORMACIÓN DE PRECIO GDM</span> · SPOT + ESTIMADO ENE 2027</h1>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'IBM Plex Mono',monospace">
+      R$/sc = usc/bu × 0.367431 × TC × 0.06 &nbsp;·&nbsp; usc/bu = R$/sc / TC / 0.06 / 0.367431 &nbsp;·&nbsp; USD/sc = R$/sc / TC
+    </div>
+  </div>
+  <span class="ts" id="gdm-ts">cargando...</span>
+</div>
+
+<div class="inputs-wrap">
+  <div class="inputs-title">Parámetros</div>
+  <div class="inputs-row">
+    <div class="inp-group">
+      <label>Chicago spot (usc/bu) <span class="tag live">LIVE</span></label>
+      <input id="gdm-chi_spot" type="number" step="0.25" value="1194.25">
+    </div>
+    <div class="inp-group">
+      <label>Chicago Ene 27 (usc/bu) <span class="tag live">LIVE</span></label>
+      <input id="gdm-chi_fwd" type="number" step="0.25" value="1210.00">
+    </div>
+    <div class="inp-group">
+      <label>TC spot (BRL/USD) <span class="tag live">LIVE</span></label>
+      <input id="gdm-tc_spot" type="number" step="0.001" value="4.90">
+    </div>
+    <div class="inp-group">
+      <label>TC Nov fwd (BRL/USD) <span class="tag live">LIVE</span></label>
+      <input id="gdm-tc_fwd" type="number" step="0.001" value="5.12">
+    </div>
+    <div class="inp-group">
+      <label>Premio Paranaguá spot (usc/bu) <span class="tag man">MANUAL</span></label>
+      <input id="gdm-prem_pnag_spot" type="number" step="0.5" value="20">
+    </div>
+    <div class="inp-group">
+      <label>Premio Santos spot (usc/bu) <span class="tag man">MANUAL</span></label>
+      <input id="gdm-prem_sant_spot" type="number" step="0.5" value="20">
+    </div>
+  </div>
+  <div class="inputs-row">
+    <div class="inp-group">
+      <label>Premio Santos Ene27 (usc/bu) <span class="tag man">MANUAL</span></label>
+      <input id="gdm-prem_sant_fwd" type="number" step="0.5" value="80">
+    </div>
+    <div class="inp-group">
+      <label>Premio Paranaguá Ene27 <span class="tag man">MANUAL</span></label>
+      <input id="gdm-prem_pnag_fwd" type="number" step="0.5" value="80">
+    </div>
+    <div class="inp-group">
+      <label>TNA inflación (%/año)</label>
+      <input id="gdm-tna" type="number" step="0.1" value="2.3">
+    </div>
+    <div class="inp-group">
+      <label>Fecha objetivo</label>
+      <input id="gdm-fecha_fwd" type="date" value="2027-01-15" style="width:140px">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-self:flex-end">
+      <span style="font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace" id="gdm-lbl-factor">Factor período: —</span>
+      <span style="font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace" id="gdm-lbl-dias">Días: —</span>
+    </div>
+    <button class="btn-calc" onclick="gdmCalc()">↻ Recalcular</button>
+  </div>
+</div>
+
+<div class="status-row">
+  <div class="s-item"><div class="dot" id="gdm-dot-chi"></div>Chicago spot: <b id="gdm-lbl-chi">—</b></div>
+  <div class="s-item"><div class="dot" id="gdm-dot-chifwd"></div>Chicago Ene27: <b id="gdm-lbl-chifwd">—</b></div>
+  <div class="s-item"><div class="dot" id="gdm-dot-tc"></div>TC spot: <b id="gdm-lbl-tc">—</b></div>
+  <div class="s-item"><div class="dot" id="gdm-dot-fwd"></div>TC Nov fwd: <b id="gdm-lbl-fwd">—</b></div>
+  <div class="s-item"><div class="dot" id="gdm-dot-fisico"></div>Físicos NA: <b id="gdm-lbl-fisico">—</b></div>
+  <div class="s-item"><div class="dot" id="gdm-dot-premio"></div>Premios NA: <b id="gdm-lbl-premio">—</b></div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr class="hdr-group">
+      <th class="h-empty"></th>
+      <th class="h-spot" colspan="3">SPOT (hoy) · R$/sc</th>
+      <th class="h-basis" colspan="2">BASIS (dif. local vs puerto)</th>
+      <th class="h-fwd" colspan="3">ESTIMADO ENE 2027 · R$/sc</th>
+      <th class="h-gdm" colspan="1">BASIS GDM</th>
+    </tr>
+    <tr class="hdr-sub">
+      <th>Localidad</th>
+      <th>Físico<br>R$/sc</th>
+      <th>Precio Puerto<br>R$/sc</th>
+      <th>Precio Puerto<br>usc/bu</th>
+      <th>Basis<br>R$/sc</th>
+      <th>Basis ajust.<br>TNA · R$/sc</th>
+      <th>Puerto Ene27<br>R$/sc</th>
+      <th>Local Ene27<br>R$/sc</th>
+      <th>Local Ene27<br>usc/bu</th>
+      <th>Basis GDM<br>Loc−Chi usc/bu</th>
+    </tr>
+  </thead>
+  <tbody id="gdm-tbody"></tbody>
+</table>
+</div>
+
+
+
+<div class="note">
+  <b>Conversiones:</b>
+  R$/sc → usc/bu: ÷ TC ÷ 0.06 ÷ 0.367431 &nbsp;|&nbsp;
+  usc/bu → R$/sc: × 0.367431 × TC × 0.06 &nbsp;|&nbsp;
+  USD/sc: R$/sc ÷ TC<br>
+  <b>Premio spot:</b> calculado de NA como (Precio Puerto FOB − Chicago_spot × 0.367431 × TC × 0.06) ÷ TC ÷ 0.06 ÷ 0.367431<br>
+  <b>Basis local (R$/sc):</b> Físico local − Precio Puerto spot<br>
+  <b>Ajuste TNA:</b> Basis × [(1 + TNA/100)^(días/365) − 1] aplicado sobre la basis<br>
+  → Basis ajustada = Basis × (1 + TNA)^(días/365)<br>
+  <b>Precio Local Ene27:</b> Puerto Ene27 + Basis ajustada<br>
+  <b>Basis GDM (usc/bu):</b> Precio Local Ene27 − Chicago Ene27 (negativo = mercado interior bajo Chicago, que es lo normal para Brasil interior)<br>
+  <b>Premio futuro:</b> ingresar manualmente de Investing FOB Santos/Paranaguá para el vencimiento más cercano a Ene27
+</div>
+
+<script>
+// GAS from main script
+// Conversiones
+// R$/sc = usc/bu × 0.367431 × TC × 0.06
+// usc/bu = R$/sc / TC / 0.06 / 0.367431
+// USD/sc = R$/sc / TC
+var F = 0.367431;
+var SC = 0.06; // 60kg/1000
+
+function rscToUsc(rsc, tc) { return rsc / tc / SC / F; }
+function uscToRsc(usc, tc) { return usc * F * tc * SC; }
+function rscToUsd(rsc, tc) { return rsc / tc; }
+
+// Pesos normalizados al 100%
+var LOCS = [
+  { key:'rioverde',     label:'Rio Verde',    puerto:'Santos',     premKey:'santos', w:0.28 },
+  { key:'passofundo',   label:'Passo Fundo',  puerto:'Rio Grande', premKey:'pnag',   w:0.19 },
+  { key:'brasilia',     label:'Brasília',     puerto:'Santos',     premKey:'santos', w:0.18 },
+  { key:'rondonopolis', label:'Rondonópolis', puerto:'Santos',     premKey:'santos', w:0.16 },
+  { key:'oestebahia',   label:'Barreiras',    puerto:'Paranaguá',  premKey:'pnag',   w:0.11 },
+  { key:'patobranco',   label:'Londrina',     puerto:'Paranaguá',  premKey:'pnag',   w:0.08 },
+];
+
+var spots = {};
+var premioSpotSantos = null; // usc/bu calculado desde NA
+var premioSpotPnag   = null; // usc/bu calculado desde NA
+
+function jcall(p, cb, err) {
+  var url = new URL(GAS);
+  Object.entries(p).forEach(([k,v]) => url.searchParams.set(k,v));
+  fetch(url).then(r=>r.json()).then(d=>cb(d)).catch(e=>{ if(err) err(e); });
+}
+function unwrap(d) {
+  if (!d) return null;
+  if (d.data && d.data.data) return d.data.data;
+  if (d.data) return d.data;
+  return d;
+}
+function setDot(id, ok) { var el=document.getElementById('dot-'+id); if(el) el.className='dot'+(ok?' ok':''); }
+function setLbl(id, t)   { var el=document.getElementById('lbl-'+id);  if(el) el.textContent=t; }
+function f2(v)  { return Math.round(v*100)/100; }
+function f4(v)  { return Math.round(v*10000)/10000; }
+function fmt(v, d, cls, sign) {
+  if (v === null || v === undefined) return `<td class="z">—</td>`;
+  var s = sign && v > 0 ? '+' : '';
+  return `<td class="${cls||'n'}">${s}${v.toFixed(d)}</td>`;
+}
+
+// Calcular factor TNA para el periodo
+function calcFactor() {
+  var tna   = +document.getElementById('tna').value / 100;
+  var fecha = document.getElementById('fecha_fwd').value;
+  var target= new Date(fecha + 'T12:00:00');
+  var today = new Date();
+  var dias  = Math.round((target - today) / 86400000);
+  var factor= Math.pow(1 + tna, dias / 365) - 1;
+  document.getElementById('lbl-factor').textContent = 'Factor período: ' + (factor*100).toFixed(3) + '%';
+  document.getElementById('lbl-dias').textContent   = 'Días: ' + dias;
+  return { factor, dias };
+}
+
+function fetchLive() {
+  // 1. basis_br → físicos + TC spot + Chicago spot
+  jcall({section:'basis_br'}, function(d) {
+    var r = unwrap(d);
+    if (!r) { calcular(); return; }
+    if (r.brl) {
+      document.getElementById('tc_spot').value = r.brl.toFixed(4);
+      setDot('tc',true); setLbl('tc', r.brl.toFixed(4));
+    }
+    if (r.cbot_usc) {
+      document.getElementById('chi_spot').value = r.cbot_usc.toFixed(2);
+      setDot('chi',true); setLbl('chi', r.cbot_usc.toFixed(2)+' usc/bu');
+    }
+    if (r.spots) {
+      spots = {...r.spots};
+      if (!spots.passofundo) spots.passofundo = spots.naometoque || null;
+
+      // Premio spot desde NA: precio FOB puerto − paridad implícita
+      // Premio (usc/bu) = rscToUsc(precio_puerto, tc) - chicago_spot
+      var tc  = r.brl || +document.getElementById('tc_spot').value;
+      var chi = r.cbot_usc || +document.getElementById('chi_spot').value;
+
+      // Porto Santos/SP (Dellagro) ya lo tenemos en spots si queremos...
+      // Pero lo correcto es usar la página de PREMIO directo de NA
+      // Por ahora lo derivamos del precio FOB Santos que devuelve basis_br
+      // Santos = spots.paranagua (usamos Paranaguá como proxy si no hay Santos)
+      // Si el GAS devuelve precio FOB Santos lo usamos directamente
+      // Guardamos para cálculo posterior
+      spots._chiSpot = chi;
+      spots._tc      = tc;
+
+      var n = Object.values(spots).filter(v => typeof v === 'number' && v > 0).length;
+      setDot('fisico',true); setLbl('fisico', n+' loc · NA');
+    }
+    if (r.ts) document.getElementById('ts').textContent = r.ts;
+    calcular();
+  }, () => calcular());
+
+  // 2. Premio spot de NA: usamos prices section para obtener precios FOB
+  // Intentamos con basis_br que ya trae spots incluyendo paranagua/santos
+  // El premio se calcula en calcular() cuando tenemos todos los datos
+
+  // 3. TC Nov fwd
+  jcall({section:'dolcurve'}, function(d) {
+    var r = unwrap(d);
+    if (!r || !r.curve) return;
+    var nov = r.curve.find(c => c.label && c.label.toUpperCase().includes('NOV'));
+    if (nov && nov.fwd) {
+      document.getElementById('tc_fwd').value = nov.fwd.toFixed(4);
+      setDot('fwd',true); setLbl('fwd', nov.fwd.toFixed(4)+' ('+nov.label+')');
+    }
+    calcular();
+  }, null);
+
+  // 4. Chicago Ene27
+  jcall({section:'prices', symbols:'ZSF27.CBT'}, function(d) {
+    var r = unwrap(d);
+    var p = r && r['ZSF27.CBT'] && r['ZSF27.CBT'].price;
+    if (p) {
+      document.getElementById('chi_fwd').value = p.toFixed(2);
+      setDot('chifwd',true); setLbl('chifwd', p.toFixed(2)+' usc/bu');
+    }
+    calcular();
+  }, null);
+}
+
+function calcular() {
+  var chiSpot  = +document.getElementById('chi_spot').value;
+  var chiFwd   = +document.getElementById('chi_fwd').value;
+  var tcSpot   = +document.getElementById('tc_spot').value;
+  var tcFwd    = +document.getElementById('tc_fwd').value;
+  var premSantFwd  = +document.getElementById('prem_sant_fwd').value;
+  var premPnagFwd  = +document.getElementById('prem_pnag_fwd').value;
+
+  var { factor } = calcFactor();
+
+  // Premio spot: derivado del precio físico FOB
+  // Precio Puerto spot (R$/sc) = (chicago_spot + premio_spot) × F × tc × 0.06
+  // → premio_spot (usc/bu) = rscToUsc(precio_fob_spot, tc) - chicago_spot
+  // Usamos paranaguá y Santos directamente de NA
+  // Premio spot: valor manual ingresado por el usuario
+  var premPnagSpot = +document.getElementById('prem_pnag_spot').value;
+  var premSantSpot = +document.getElementById('prem_sant_spot').value;
+  setDot('premio',true);
+  setLbl('premio', 'Pnag: '+premPnagSpot.toFixed(1)+' · Sant: '+premSantSpot.toFixed(1)+' usc/bu');
+
+  // Por localidad
+  var rows = LOCS.map(loc => {
+    var fisico = spots[loc.key] || null;
+
+    // Premio spot según puerto
+    var premSpot = loc.premKey === 'santos'
+      ? (premSantSpot !== null ? premSantSpot : premPnagSpot)
+      : premPnagSpot;
+
+    // Precio Puerto spot (R$/sc) y (usc/bu)
+    var puertoPrecioUsc = chiSpot + (premSpot || 0);
+    var puertoPrecioRsc = f2(uscToRsc(puertoPrecioUsc, tcSpot));
+    var puertoPrecioUscF= f2(puertoPrecioUsc);
+
+    // Basis spot (R$/sc) = físico − precio puerto spot
+    var basis     = fisico !== null ? f2(fisico - puertoPrecioRsc) : null;
+
+    // Basis ajustada por TNA para el periodo
+    var basisAdj  = basis !== null ? f2(basis * (1 + factor)) : null;
+
+    // Premio futuro según puerto
+    var premFwd   = loc.premKey === 'santos' ? premSantFwd : premPnagFwd;
+
+    // Precio Puerto Ene27 (R$/sc)
+    var puertoPrecioFwdRsc = f2(uscToRsc(chiFwd + premFwd, tcFwd));
+
+    // Precio Local Ene27 (R$/sc) = Puerto Ene27 + Basis ajustada
+    var localFwdRsc = basisAdj !== null ? f2(puertoPrecioFwdRsc + basisAdj) : null;
+
+    // Precio Local Ene27 (usc/bu)
+    var localFwdUsc = localFwdRsc !== null ? f2(rscToUsc(localFwdRsc, tcFwd)) : null;
+
+    // Basis GDM (usc/bu) = Chicago Ene27 − Precio Local Ene27 usc/bu
+    var basisGdm = localFwdUsc !== null ? f2(localFwdUsc - chiFwd) : null;
+
+    return {
+      fisico, puertoPrecioRsc, puertoPrecioUscF,
+      basis, basisAdj,
+      puertoPrecioFwdRsc, localFwdRsc, localFwdUsc,
+      basisGdm
+    };
+  });
+
+  // Ponderado helper
+  function pond(key) {
+    var s=0, w=0;
+    rows.forEach((r,i) => {
+      var v = r[key];
+      if (v !== null && v !== undefined) { s += v*LOCS[i].w; w += LOCS[i].w; }
+    });
+    return w > 0 ? f2(s/w) : null;
+  }
+
+  var html = '';
+  rows.forEach((r, i) => {
+    var pct = (LOCS[i].w*100).toFixed(0)+'%';
+    var bCls = r.basis === null ? 'z' : r.basis < 0 ? 'basis-neg' : 'basis';
+    var bAdjCls = r.basisAdj === null ? 'z' : r.basisAdj < 0 ? 'basis-neg' : 'basis';
+    var gdmCls  = r.basisGdm === null ? 'z' : r.basisGdm < 0 ? 'neg-v' : 'pos';
+
+    html += `<tr class="row-loc">
+      <td>${LOCS[i].label} <span style="color:var(--text3);font-size:10px;font-weight:400">${pct} · ${LOCS[i].puerto}</span></td>
+      ${fmt(r.fisico,           2, 'spot')}
+      ${fmt(r.puertoPrecioRsc,  2, 'spot', false)}
+      ${fmt(r.puertoPrecioUscF, 2, 'z',    false)}
+      ${fmt(r.basis,            2, bCls,   true)}
+      ${fmt(r.basisAdj,         2, bAdjCls,true)}
+      ${fmt(r.puertoPrecioFwdRsc,2,'fwd')}
+      ${fmt(r.localFwdRsc,      2, 'fwd')}
+      ${fmt(r.localFwdUsc,      2, 'fwd')}
+      ${fmt(r.basisGdm,         2, gdmCls, true)}
+    </tr>`;
+  });
+
+  // Fila ponderada
+  var pFisico   = pond('fisico');
+  var pPuertoRsc= pond('puertoPrecioRsc');
+  var pBasis    = pond('basis');
+  var pBasisAdj = pond('basisAdj');
+  var pFwdRsc   = pond('localFwdRsc');
+  var pFwdUsc   = pond('localFwdUsc');
+  var pGdm      = pond('basisGdm');
+  var pPuertoFwd= pond('puertoPrecioFwdRsc');
+
+  var bCls  = pBasis   === null ? 'z' : pBasis   < 0 ? 'basis-neg' : 'basis';
+  var bACls = pBasisAdj=== null ? 'z' : pBasisAdj< 0 ? 'basis-neg' : 'basis';
+  var gdmC  = pGdm     === null ? 'z' : pGdm     < 0 ? 'neg-v'     : 'pos';
+
+  html += `<tr class="row-pond">
+    <td style="color:var(--gold)">▶ PONDERADO <span style="color:var(--text3);font-size:10px;font-weight:400">RV28·PF19·BSB18·Ron16·Bar11·Lon8</span></td>
+    ${fmt(pFisico,    2, 'spot')}
+    ${fmt(pPuertoRsc, 2, 'spot')}
+    <td class="z">${pPuertoRsc !== null ? f2(rscToUsc(pPuertoRsc, tcSpot)).toFixed(2) : '—'}</td>
+    ${fmt(pBasis,     2, bCls,  true)}
+    ${fmt(pBasisAdj,  2, bACls, true)}
+    ${fmt(pPuertoFwd, 2, 'fwd')}
+    ${fmt(pFwdRsc,    2, 'fwd')}
+    ${fmt(pFwdUsc,    2, 'fwd')}
+    ${fmt(pGdm,       2, gdmC,  true)}
+  </tr>`;
+
+  // Filas de conversión de unidades — debajo del ponderado, al final de la tabla
+  var pFwdUscFmt   = pFwdRsc !== null ? f2(rscToUsc(pFwdRsc, tcFwd))   : null;
+  var pFisicoUscFmt= pFisico !== null ? f2(rscToUsc(pFisico, tcSpot))  : null;
+  var pFisicoUsdFmt= pFisico !== null ? f2(rscToUsd(pFisico, tcSpot))  : null;
+  var pFwdUsdFmt   = pFwdRsc !== null ? f2(rscToUsd(pFwdRsc, tcFwd))   : null;
+  // Basis GDM en USD/sc: pGdm en usc/bu → × F × tcFwd × 0.06 → R$/sc → / tcFwd = USD/sc
+  var pGdmUsdFmt   = pGdm   !== null ? f2(pGdm * F * 0.06)             : null;
+
+  // Separator row
+  html += `<tr style="border-top:1px dashed var(--border)">
+    <td colspan="10" style="padding:4px 10px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;background:var(--surface2)">
+      Conversión de unidades — ponderado
+    </td>
+  </tr>`;
+
+  // usc/bu row
+  var gdmUscCls = pGdm   !== null ? (pGdm   < 0 ? 'neg-v' : 'pos') : 'z';
+  var gdmUsdCls = pGdmUsdFmt !== null ? (pGdmUsdFmt < 0 ? 'neg-v' : 'pos') : 'z';
+
+  html += `<tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+    <td style="color:var(--text3);font-size:10px;padding:6px 10px 6px 20px">usc/bu</td>
+    <td class="spot" style="font-size:11px">${pFisicoUscFmt !== null ? pFisicoUscFmt.toFixed(2) : '—'}</td>
+    <td colspan="5" style="color:var(--text3);font-size:10px;text-align:center">·</td>
+    <td class="fwd" style="font-size:11px">${pFwdUscFmt !== null ? pFwdUscFmt.toFixed(2) : '—'}</td>
+    <td class="fwd" style="font-size:11px">·</td>
+    <td class="${gdmUscCls}" style="font-size:11px">${pGdm !== null ? (pGdm>=0?'+':'')+pGdm.toFixed(2) : '—'}</td>
+  </tr>`;
+
+  // USD/sc row
+  html += `<tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+    <td style="color:var(--text3);font-size:10px;padding:6px 10px 6px 20px">USD/sc</td>
+    <td class="spot" style="font-size:11px">${pFisicoUsdFmt !== null ? pFisicoUsdFmt.toFixed(2) : '—'}</td>
+    <td colspan="5" style="color:var(--text3);font-size:10px;text-align:center">·</td>
+    <td class="fwd" style="font-size:11px">${pFwdUsdFmt !== null ? pFwdUsdFmt.toFixed(2) : '—'}</td>
+    <td class="fwd" style="font-size:11px">·</td>
+    <td class="${gdmUsdCls}" style="font-size:11px">${pGdmUsdFmt !== null ? (pGdmUsdFmt>=0?'+':'')+pGdmUsdFmt.toFixed(2) : '—'}</td>
+  </tr>`;
+
+  document.getElementById('tbody').innerHTML = html;
+
+
+}
+
+// Recalcular cuando cambia la fecha
+// document.getElementById('fecha_fwd').addEventListener('change', calcular);
+// document.getElementById('tna').addEventListener('change', calcular);
+
+fetchLive();
+
+// ── BASIS GDM (Paridad) ──────────────────────────────────────────
+// GAS from main script // = 'https://script.google.com/macros/s/AKfycbzhM96H0fgeiFB5RTR63Df_mInMWtw0C4WPr-q_Utc3Y85rnIhyU83-orv9ZBFUygzs/exec';
+
+// Conversiones
+// R$/sc = usc/bu × 0.367431 × TC × 0.06
+// usc/bu = R$/sc / TC / 0.06 / 0.367431
+// USD/sc = R$/sc / TC
+var GDM_F = 0.367431;
+var GDM_SC = 0.06; // 60kg/1000
+
+function gdmRscToUsc(rsc, tc) { return rsc / tc / GDM_SC / GDM_F; }
+function gdmUscToRsc2(usc, tc) { return usc * GDM_F * tc * GDM_SC; }
+function gdmRscToUsd(rsc, tc) { return rsc / tc; }
+
+// Pesos normalizados al 100%
+var GDM_LOCS = [
+  { key:'rioverde',     label:'Rio Verde',    puerto:'Santos',     premKey:'santos', w:0.28 },
+  { key:'passofundo',   label:'Passo Fundo',  puerto:'Rio Grande', premKey:'pnag',   w:0.19 },
+  { key:'brasilia',     label:'Brasília',     puerto:'Santos',     premKey:'santos', w:0.18 },
+  { key:'rondonopolis', label:'Rondonópolis', puerto:'Santos',     premKey:'santos', w:0.16 },
+  { key:'oestebahia',   label:'Barreiras',    puerto:'Paranaguá',  premKey:'pnag',   w:0.11 },
+  { key:'patobranco',   label:'Londrina',     puerto:'Paranaguá',  premKey:'pnag',   w:0.08 },
+];
+
+var gdmSpots = {};
+var premioSpotSantos = null; // usc/bu calculado desde NA
+var premioSpotPnag   = null; // usc/bu calculado desde NA
+
+function gdmJcall(p, cb, err) {
+  var url = new URL(GAS);
+  Object.entries(p).forEach(([k,v]) => url.searchParams.set(k,v));
+  fetch(url).then(r=>r.json()).then(d=>cb(d)).catch(e=>{ if(err) err(e); });
+}
+function gdmUnwrap(d) {
+  if (!d) return null;
+  if (d.data && d.data.data) return d.data.data;
+  if (d.data) return d.data;
+  return d;
+}
+function gdmSetDot(id, ok) { var el=document.getElementById('dot-'+id); if(el) el.className='dot'+(ok?' ok':''); }
+function gdmSetLbl(id, t)   { var el=document.getElementById('lbl-'+id);  if(el) el.textContent=t; }
+function gdmF2(v)  { return Math.round(v*100)/100; }
+function f4(v)  { return Math.round(v*10000)/10000; }
+function fmt(v, d, cls, sign) {
+  if (v === null || v === undefined) return `<td class="z">—</td>`;
+  var s = sign && v > 0 ? '+' : '';
+  return `<td class="${cls||'n'}">${s}${v.toFixed(d)}</td>`;
+}
+
+// Calcular factor TNA para el periodo
+function gdmCalcFactor() {
+  var tna   = +document.getElementById('gdm-tna').value / 100;
+  var fecha = document.getElementById('gdm-fecha_fwd').value;
+  var target= new Date(fecha + 'T12:00:00');
+  var today = new Date();
+  var dias  = Math.round((target - today) / 86400000);
+  var factor= Math.pow(1 + tna, dias / 365) - 1;
+  document.getElementById('gdm-lbl-factor').textContent = 'Factor período: ' + (factor*100).toFixed(3) + '%';
+  document.getElementById('gdm-lbl-dias').textContent   = 'Días: ' + dias;
+  return { factor, dias };
+}
+
+function gdmFetchLive() {
+  // 1. basis_br → físicos + TC spot + Chicago spot
+  gdmJcall({section:'basis_br'}, function(d) {
+    var r = gdmUnwrap(d);
+    if (!r) { gdmCalc(); return; }
+    if (r.brl) {
+      document.getElementById('gdm-tc_spot').value = r.brl.toFixed(4);
+      gdmSetDot('tc',true); gdmSetLbl('tc', r.brl.toFixed(4));
+    }
+    if (r.cbot_usc) {
+      document.getElementById('gdm-chi_spot').value = r.cbot_usc.toFixed(2);
+      gdmSetDot('chi',true); gdmSetLbl('chi', r.cbot_usc.toFixed(2)+' usc/bu');
+    }
+    if (r.spots) {
+      gdmSpots = {...r.spots};
+      if (!gdmSpots.passofundo) gdmSpots.passofundo = gdmSpots.naometoque || null;
+
+      // Premio spot desde NA: precio FOB puerto − paridad implícita
+      // Premio (usc/bu) = gdmRscToUsc(precio_puerto, tc) - chicago_spot
+      var tc  = r.brl || +document.getElementById('gdm-tc_spot').value;
+      var chi = r.cbot_usc || +document.getElementById('gdm-chi_spot').value;
+
+      // Porto Santos/SP (Dellagro) ya lo tenemos en spots si queremos...
+      // Pero lo correcto es usar la página de PREMIO directo de NA
+      // Por ahora lo derivamos del precio FOB Santos que devuelve basis_br
+      // Santos = gdmSpots.paranagua (usamos Paranaguá como proxy si no hay Santos)
+      // Si el GAS devuelve precio FOB Santos lo usamos directamente
+      // Guardamos para cálculo posterior
+      gdmSpots._chiSpot = chi;
+      gdmSpots._tc      = tc;
+
+      var n = Object.values(spots).filter(v => typeof v === 'number' && v > 0).length;
+      gdmSetDot('fisico',true); gdmSetLbl('fisico', n+' loc · NA');
+    }
+    if (r.ts) document.getElementById('gdm-ts').textContent = r.ts;
+    gdmCalc();
+  }, () => gdmCalc());
+
+  // 2. Premio spot de NA: usamos prices section para obtener precios FOB
+  // Intentamos con basis_br que ya trae spots incluyendo paranagua/santos
+  // El premio se calcula en gdmCalc() cuando tenemos todos los datos
+
+  // 3. TC Nov fwd
+  gdmJcall({section:'dolcurve'}, function(d) {
+    var r = gdmUnwrap(d);
+    if (!r || !r.curve) return;
+    var nov = r.curve.find(c => c.label && c.label.toUpperCase().includes('NOV'));
+    if (nov && nov.fwd) {
+      document.getElementById('gdm-tc_fwd').value = nov.fwd.toFixed(4);
+      gdmSetDot('fwd',true); gdmSetLbl('fwd', nov.fwd.toFixed(4)+' ('+nov.label+')');
+    }
+    gdmCalc();
+  }, null);
+
+  // 4. Chicago Ene27
+  gdmJcall({section:'prices', symbols:'ZSF27.CBT'}, function(d) {
+    var r = gdmUnwrap(d);
+    var p = r && r['ZSF27.CBT'] && r['ZSF27.CBT'].price;
+    if (p) {
+      document.getElementById('gdm-chi_fwd').value = p.toFixed(2);
+      gdmSetDot('chifwd',true); gdmSetLbl('chifwd', p.toFixed(2)+' usc/bu');
+    }
+    gdmCalc();
+  }, null);
+}
+
+function gdmCalc() {
+  var chiSpot  = +document.getElementById('gdm-chi_spot').value;
+  var chiFwd   = +document.getElementById('gdm-chi_fwd').value;
+  var tcSpot   = +document.getElementById('gdm-tc_spot').value;
+  var tcFwd    = +document.getElementById('gdm-tc_fwd').value;
+  var premSantFwd  = +document.getElementById('gdm-prem_sant_fwd').value;
+  var premPnagFwd  = +document.getElementById('gdm-prem_pnag_fwd').value;
+
+  var { factor } = gdmCalcFactor();
+
+  // Premio spot: derivado del precio físico FOB
+  // Precio Puerto spot (R$/sc) = (chicago_spot + premio_spot) × GDM_F × tc × 0.06
+  // → premio_spot (usc/bu) = gdmRscToUsc(precio_fob_spot, tc) - chicago_spot
+  // Usamos paranaguá y Santos directamente de NA
+  // Premio spot: valor manual ingresado por el usuario
+  var premPnagSpot = +document.getElementById('gdm-prem_pnag_spot').value;
+  var premSantSpot = +document.getElementById('gdm-prem_sant_spot').value;
+  gdmSetDot('premio',true);
+  gdmSetLbl('premio', 'Pnag: '+premPnagSpot.toFixed(1)+' · Sant: '+premSantSpot.toFixed(1)+' usc/bu');
+
+  // Por localidad
+  var rows = GDM_LOCS.map(loc => {
+    var fisico = gdmSpots[loc.key] || null;
+
+    // Premio spot según puerto
+    var premSpot = loc.premKey === 'santos'
+      ? (premSantSpot !== null ? premSantSpot : premPnagSpot)
+      : premPnagSpot;
+
+    // Precio Puerto spot (R$/sc) y (usc/bu)
+    var puertoPrecioUsc = chiSpot + (premSpot || 0);
+    var puertoPrecioRsc = gdmF2(gdmUscToRsc2(puertoPrecioUsc, tcSpot));
+    var puertoPrecioUscF= gdmF2(puertoPrecioUsc);
+
+    // Basis spot (R$/sc) = físico − precio puerto spot
+    var basis     = fisico !== null ? gdmF2(fisico - puertoPrecioRsc) : null;
+
+    // Basis ajustada por TNA para el periodo
+    var basisAdj  = basis !== null ? gdmF2(basis * (1 + factor)) : null;
+
+    // Premio futuro según puerto
+    var premFwd   = loc.premKey === 'santos' ? premSantFwd : premPnagFwd;
+
+    // Precio Puerto Ene27 (R$/sc)
+    var puertoPrecioFwdRsc = gdmF2(gdmUscToRsc2(chiFwd + premFwd, tcFwd));
+
+    // Precio Local Ene27 (R$/sc) = Puerto Ene27 + Basis ajustada
+    var localFwdRsc = basisAdj !== null ? gdmF2(puertoPrecioFwdRsc + basisAdj) : null;
+
+    // Precio Local Ene27 (usc/bu)
+    var localFwdUsc = localFwdRsc !== null ? gdmF2(gdmRscToUsc(localFwdRsc, tcFwd)) : null;
+
+    // Basis GDM (usc/bu) = Chicago Ene27 − Precio Local Ene27 usc/bu
+    var basisGdm = localFwdUsc !== null ? gdmF2(localFwdUsc - chiFwd) : null;
+
+    return {
+      fisico, puertoPrecioRsc, puertoPrecioUscF,
+      basis, basisAdj,
+      puertoPrecioFwdRsc, localFwdRsc, localFwdUsc,
+      basisGdm
+    };
+  });
+
+  // Ponderado helper
+  function pond(key) {
+    var s=0, w=0;
+    rows.forEach((r,i) => {
+      var v = r[key];
+      if (v !== null && v !== undefined) { s += v*GDM_LOCS[i].w; w += GDM_LOCS[i].w; }
+    });
+    return w > 0 ? gdmF2(s/w) : null;
+  }
+
+  var html = '';
+  rows.forEach((r, i) => {
+    var pct = (LOCS[i].w*100).toFixed(0)+'%';
+    var bCls = r.basis === null ? 'z' : r.basis < 0 ? 'basis-neg' : 'basis';
+    var bAdjCls = r.basisAdj === null ? 'z' : r.basisAdj < 0 ? 'basis-neg' : 'basis';
+    var gdmCls  = r.basisGdm === null ? 'z' : r.basisGdm < 0 ? 'neg-v' : 'pos';
+
+    html += `<tr class="row-loc">
+      <td>${LOCS[i].label} <span style="color:var(--text3);font-size:10px;font-weight:400">${pct} · ${LOCS[i].puerto}</span></td>
+      ${fmt(r.fisico,           2, 'spot')}
+      ${fmt(r.puertoPrecioRsc,  2, 'spot', false)}
+      ${fmt(r.puertoPrecioUscF, 2, 'z',    false)}
+      ${fmt(r.basis,            2, bCls,   true)}
+      ${fmt(r.basisAdj,         2, bAdjCls,true)}
+      ${fmt(r.puertoPrecioFwdRsc,2,'fwd')}
+      ${fmt(r.localFwdRsc,      2, 'fwd')}
+      ${fmt(r.localFwdUsc,      2, 'fwd')}
+      ${fmt(r.basisGdm,         2, gdmCls, true)}
+    </tr>`;
+  });
+
+  // Fila ponderada
+  var pFisico   = pond('fisico');
+  var pPuertoRsc= pond('puertoPrecioRsc');
+  var pBasis    = pond('basis');
+  var pBasisAdj = pond('basisAdj');
+  var pFwdRsc   = pond('localFwdRsc');
+  var pFwdUsc   = pond('localFwdUsc');
+  var pGdm      = pond('basisGdm');
+  var pPuertoFwd= pond('puertoPrecioFwdRsc');
+
+  var bCls  = pBasis   === null ? 'z' : pBasis   < 0 ? 'basis-neg' : 'basis';
+  var bACls = pBasisAdj=== null ? 'z' : pBasisAdj< 0 ? 'basis-neg' : 'basis';
+  var gdmC  = pGdm     === null ? 'z' : pGdm     < 0 ? 'neg-v'     : 'pos';
+
+  html += `<tr class="row-pond">
+    <td style="color:var(--gold)">▶ PONDERADO <span style="color:var(--text3);font-size:10px;font-weight:400">RV28·PF19·BSB18·Ron16·Bar11·Lon8</span></td>
+    ${fmt(pFisico,    2, 'spot')}
+    ${fmt(pPuertoRsc, 2, 'spot')}
+    <td class="z">${pPuertoRsc !== null ? gdmF2(gdmRscToUsc(pPuertoRsc, tcSpot)).toFixed(2) : '—'}</td>
+    ${fmt(pBasis,     2, bCls,  true)}
+    ${fmt(pBasisAdj,  2, bACls, true)}
+    ${fmt(pPuertoFwd, 2, 'fwd')}
+    ${fmt(pFwdRsc,    2, 'fwd')}
+    ${fmt(pFwdUsc,    2, 'fwd')}
+    ${fmt(pGdm,       2, gdmC,  true)}
+  </tr>`;
+
+  // Filas de conversión de unidades — debajo del ponderado, al final de la tabla
+  var pFwdUscFmt   = pFwdRsc !== null ? gdmF2(gdmRscToUsc(pFwdRsc, tcFwd))   : null;
+  var pFisicoUscFmt= pFisico !== null ? gdmF2(gdmRscToUsc(pFisico, tcSpot))  : null;
+  var pFisicoUsdFmt= pFisico !== null ? gdmF2(gdmRscToUsd(pFisico, tcSpot))  : null;
+  var pFwdUsdFmt   = pFwdRsc !== null ? gdmF2(gdmRscToUsd(pFwdRsc, tcFwd))   : null;
+  // Basis GDM en USD/sc: pGdm en usc/bu → × GDM_F × tcFwd × 0.06 → R$/sc → / tcFwd = USD/sc
+  var pGdmUsdFmt   = pGdm   !== null ? gdmF2(pGdm * GDM_F * 0.06)             : null;
+
+  // Separator row
+  html += `<tr style="border-top:1px dashed var(--border)">
+    <td colspan="10" style="padding:4px 10px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;background:var(--surface2)">
+      Conversión de unidades — ponderado
+    </td>
+  </tr>`;
+
+  // usc/bu row
+  var gdmUscCls = pGdm   !== null ? (pGdm   < 0 ? 'neg-v' : 'pos') : 'z';
+  var gdmUsdCls = pGdmUsdFmt !== null ? (pGdmUsdFmt < 0 ? 'neg-v' : 'pos') : 'z';
+
+  html += `<tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+    <td style="color:var(--text3);font-size:10px;padding:6px 10px 6px 20px">usc/bu</td>
+    <td class="spot" style="font-size:11px">${pFisicoUscFmt !== null ? pFisicoUscFmt.toFixed(2) : '—'}</td>
+    <td colspan="5" style="color:var(--text3);font-size:10px;text-align:center">·</td>
+    <td class="fwd" style="font-size:11px">${pFwdUscFmt !== null ? pFwdUscFmt.toFixed(2) : '—'}</td>
+    <td class="fwd" style="font-size:11px">·</td>
+    <td class="${gdmUscCls}" style="font-size:11px">${pGdm !== null ? (pGdm>=0?'+':'')+pGdm.toFixed(2) : '—'}</td>
+  </tr>`;
+
+  // USD/sc row
+  html += `<tr style="background:var(--surface2);border-bottom:1px solid var(--border)">
+    <td style="color:var(--text3);font-size:10px;padding:6px 10px 6px 20px">USD/sc</td>
+    <td class="spot" style="font-size:11px">${pFisicoUsdFmt !== null ? pFisicoUsdFmt.toFixed(2) : '—'}</td>
+    <td colspan="5" style="color:var(--text3);font-size:10px;text-align:center">·</td>
+    <td class="fwd" style="font-size:11px">${pFwdUsdFmt !== null ? pFwdUsdFmt.toFixed(2) : '—'}</td>
+    <td class="fwd" style="font-size:11px">·</td>
+    <td class="${gdmUsdCls}" style="font-size:11px">${pGdmUsdFmt !== null ? (pGdmUsdFmt>=0?'+':'')+pGdmUsdFmt.toFixed(2) : '—'}</td>
+  </tr>`;
+
+  document.getElementById('gdm-tbody').innerHTML = html;
+
+
+}
+
+// Recalcular cuando cambia la fecha
+
+// called by gdmInit
+function gdmInit() {
+  if (!window._gdmLoaded) {
+    window._gdmLoaded = true;
+    var el1 = document.getElementById('gdm-fecha_fwd');
+    var el2 = document.getElementById('gdm-tna');
+    if (el1) el1.addEventListener('change', gdmCalc);
+    if (el2) el2.addEventListener('change', gdmCalc);
+    gdmFetchLive();
+  }
+}
+
+</script>
+</div><!-- /page-paridad -->
 
 <!-- PAGE: SOURCES -->
 <div class="page" id="page-sources">
