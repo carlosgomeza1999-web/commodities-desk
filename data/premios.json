@@ -1,0 +1,30 @@
+{
+  "ultima_actualizacion": "2026-05-15",
+  "fuente": "SAFRAS & Mercado - Agro Hoje Soja N° 10036",
+  "principales_portos": [
+    {"porto": "Paranaguá", "pais": "Brasil", "periodo": "Mai/26", "compra": 5, "venda": 20},
+    {"porto": "Paranaguá", "pais": "Brasil", "periodo": "Jun/26", "compra": 20, "venda": 30},
+    {"porto": "Paranaguá", "pais": "Brasil", "periodo": "Jul/26", "compra": 35, "venda": 50},
+    {"porto": "Paranaguá", "pais": "Brasil", "periodo": "Ago/26", "compra": 60, "venda": 80},
+    {"porto": "Paranaguá", "pais": "Brasil", "periodo": "Set/26", "compra": 85, "venda": 100},
+    {"porto": "Golfo do México", "pais": "EUA (CIF NOLA)", "periodo": "Mai/26", "compra": 82, "venda": 82},
+    {"porto": "Golfo do México", "pais": "EUA (CIF NOLA)", "periodo": "Jun/26", "compra": 85, "venda": 85},
+    {"porto": "Golfo do México", "pais": "EUA (CIF NOLA)", "periodo": "Jul/26", "compra": 90, "venda": 90},
+    {"porto": "Golfo do México", "pais": "EUA (CIF NOLA)", "periodo": "Ago/26", "compra": 82, "venda": 82},
+    {"porto": "Golfo do México", "pais": "EUA (CIF NOLA)", "periodo": "Set/26", "compra": 80, "venda": 80},
+    {"porto": "Rosário", "pais": "Argentina", "periodo": "Mai/26", "compra": -22, "venda": -2},
+    {"porto": "Rosário", "pais": "Argentina", "periodo": "Jun/26", "compra": -22, "venda": 8}
+  ],
+  "demais_portos": [
+    {"porto": "Santos", "pais": "Brasil", "periodo": "Mai/26", "compra": 5, "venda": 20},
+    {"porto": "Santos", "pais": "Brasil", "periodo": "Jun/26", "compra": 20, "venda": 30},
+    {"porto": "Santos", "pais": "Brasil", "periodo": "Jul/26", "compra": 35, "venda": 50},
+    {"porto": "Santos", "pais": "Brasil", "periodo": "Ago/26", "compra": 60, "venda": 80},
+    {"porto": "Santos", "pais": "Brasil", "periodo": "Set/26", "compra": 85, "venda": 100},
+    {"porto": "Barcarena", "pais": "Brasil", "periodo": "Mai/26", "compra": -15, "venda": 5},
+    {"porto": "Barcarena", "pais": "Brasil", "periodo": "Jun/26", "compra": 0, "venda": 10},
+    {"porto": "Barcarena", "pais": "Brasil", "periodo": "Jul/26", "compra": 15, "venda": 30},
+    {"porto": "Barcarena", "pais": "Brasil", "periodo": "Ago/26", "compra": 40, "venda": 60},
+    {"porto": "Barcarena", "pais": "Brasil", "periodo": "Set/26", "compra": 65, "venda": 80}
+  ]
+}
