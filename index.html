@@ -443,8 +443,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       </div>
       <div class="tabs" id="histtabs">
         <button class="tab on"  onclick="switchHist('ZS=F','Soja cont.',this)">Soja</button>
-        <button class="tab"     onclick="switchHist('ZSX26.CBT','ZSX26',this)">ZSX26</button>
-        <button class="tab"     onclick="switchHist('ZSF27.CBT','ZSF27',this)">ZSF27</button>
+        <button class="tab" id="htab-s"  onclick="switchHist('',this)">—</button>
+        <button class="tab" id="htab-t"  onclick="switchHist('',this)">—</button>
         <button class="tab"     onclick="switchHist('BRL=X','USD/BRL',this)">USD/BRL</button>
         <button class="tab"     onclick="switchHist('CL=F','WTI',this)">WTI</button>
         <button class="tab"     onclick="switchHist('ZC=F','Maíz',this)">Maíz</button>
@@ -730,44 +730,145 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 // (!)️ REEMPLAZÁ ESTA URL CON LA NUEVA QUE TE DA GOOGLE DESPUÉS DE DEPLOYAR
 const GAS = 'https://script.google.com/macros/s/AKfycbwfAuQkKHw0hsVUqCefoLCp8CuXUUoTYbTF_RuUtU2l0jWEI9RyrqUyBwkMs4e3EqI4/exec';
 
-const SOJA_CURVE_SYMS = [
-  'ZSK26.CBT','ZSN26.CBT','ZSQ26.CBT','ZSU26.CBT',
-  'ZSX26.CBT','ZSF27.CBT','ZSH27.CBT','ZSK27.CBT','ZSN27.CBT'
+// ── ROLLOVER AUTOMÁTICO — SOLO PRIMER FUTURO ─────────────────────
+// Card 1: primer futuro activo (rollover automatico)
+// Card 2: ZSX del año corriente (Nov) -- SIEMPRE
+// Card 3: ZSF del año siguiente (Ene) -- SIEMPRE
+// Meses CBOT soja: F(Ene) H(Mar) K(May) N(Jul) Q(Ago) U(Sep) X(Nov)
+var _SOJA_MONTHS = [
+  {code:'F',m:1,name:'Ene'},{code:'H',m:3,name:'Mar'},{code:'K',m:5,name:'May'},
+  {code:'N',m:7,name:'Jul'},{code:'Q',m:8,name:'Ago'},{code:'U',m:9,name:'Sep'},
+  {code:'X',m:11,name:'Nov'}
 ];
-const SOJA_CURVE_LABELS = ['May26','Jul26','Ago26','Sep26','Nov26','Ene27','Mar27','May27','Jul27'];
 
-const PRICE_SYMS = ['ZSK26.CBT','ZSX26.CBT','ZSF27.CBT','ZSX27.CBT','ZLK26.CBT','CL=F','BZ=F','BRL=X','ZC=F','ZCZ26.CBT','ZCZ27.CBT'];
+function getFrontContract() {
+  // Devuelve el primer contrato soja CBOT que aun no venció
+  // Cutoff: dia 15 del mes del contrato (el 1er dia hábil suele ser antes)
+  var now = new Date();
+  var yr  = now.getFullYear();
+  for (var y = yr; y <= yr + 1; y++) {
+    for (var i = 0; i < _SOJA_MONTHS.length; i++) {
+      var mo = _SOJA_MONTHS[i];
+      var expiry = new Date(y, mo.m - 1, 15);
+      if (expiry > now) {
+        var yy = String(y).slice(-2);
+        return { sym:'ZS'+mo.code+yy+'.CBT', lbl:mo.name+yy, code:mo.code, yy:yy, yr:y };
+      }
+    }
+  }
+  // fallback defensivo
+  return { sym:'ZSN26.CBT', lbl:'Jul26', code:'N', yy:'26', yr:2026 };
+}
 
-const TARGETS = {
-  'ZSK26.CBT': { buy:null,  sell:null  },
-  'ZSX26.CBT': { buy:1140, sell:1180 },
-  'ZSF27.CBT': { buy:1140, sell:1180 },
-};
+// ── CONTRATOS FIJOS / DINAMICOS ─────────────────────────────────
+var _now    = new Date();
+var _yr     = _now.getFullYear();
+var _yrNext = _yr + 1;
+var _yy     = String(_yr).slice(-2);
+var _yyNext = String(_yrNext).slice(-2);
 
-const PMETA = {
-  'ZSK26.CBT': { sym:'ZSK26', exp:'May 2026 -- 1er futuro', unit:'c/bu',    g:'soja'  },
-  'ZSX26.CBT': { sym:'ZSX26', exp:'Nov 2026',              unit:'c/bu',    g:'soja'  },
-  'ZSF27.CBT': { sym:'ZSF27', exp:'Ene 2027',              unit:'c/bu',    g:'soja'  },
-  'ZLK26.CBT': { sym:'ZL May26', exp:'Aceite soja',        unit:'c/lb',    g:'other' },
-  'CL=F':      { sym:'WTI',   exp:'1er futuro',            unit:'USD/bbl', g:'other' },
-  'BZ=F':      { sym:'Brent',  exp:'1er futuro',            unit:'USD/bbl', g:'other' },
-  'BRL=X':     { sym:'USD/BRL',exp:'Spot',                 unit:'BRL/USD', g:'other' },
-  'ZC=F':      { sym:'Maíz ZC',  exp:'1er futuro',            unit:'c/bu',    g:'other' },
-};
+var _F = getFrontContract(); // soja: primer futuro activo (rollover auto)
+var _S = { sym:'ZSX'+_yy+'.CBT',    lbl:'Nov'+_yy,    code:'X', yy:_yy,    yr:_yr     };
+var _T = { sym:'ZSF'+_yyNext+'.CBT',lbl:'Ene'+_yyNext,code:'F', yy:_yyNext,yr:_yrNext };
+
+// Aceite soja ZL: F H K N Q U V Z
+function getFrontZL() {
+  var months = [
+    {code:'F',m:1},{code:'H',m:3},{code:'K',m:5},{code:'N',m:7},
+    {code:'Q',m:8},{code:'U',m:9},{code:'V',m:10},{code:'Z',m:12}
+  ];
+  var now2 = new Date(), yr2 = now2.getFullYear();
+  for (var y2 = yr2; y2 <= yr2+1; y2++) {
+    for (var i2 = 0; i2 < months.length; i2++) {
+      if (new Date(y2, months[i2].m-1, 15) > now2) {
+        var yy2 = String(y2).slice(-2);
+        return { sym:'ZL'+months[i2].code+yy2+'.CBT', lbl:'ZL '+months[i2].code+yy2 };
+      }
+    }
+  }
+  return { sym:'ZLN26.CBT', lbl:'ZL N26' };
+}
+
+// Maiz ZC: H K N U Z
+function getFrontZC() {
+  var months = [
+    {code:'H',m:3},{code:'K',m:5},{code:'N',m:7},{code:'U',m:9},{code:'Z',m:12}
+  ];
+  var now3 = new Date(), yr3 = now3.getFullYear();
+  for (var y3 = yr3; y3 <= yr3+1; y3++) {
+    for (var i3 = 0; i3 < months.length; i3++) {
+      if (new Date(y3, months[i3].m-1, 15) > now3) {
+        var yy3 = String(y3).slice(-2);
+        return { sym:'ZC'+months[i3].code+yy3+'.CBT', lbl:'ZC '+months[i3].code+yy3 };
+      }
+    }
+  }
+  return { sym:'ZCN26.CBT', lbl:'ZC N26' };
+}
+
+var _ZL = getFrontZL();
+var _ZC = getFrontZC();
+
+// Curva: 9 contratos desde el front hacia adelante
+var _sojaCurveAll = (function() {
+  var list = [], seen = {};
+  var y = _yr;
+  var mi = 0;
+  // Empezar desde el front
+  for (var i2 = 0; i2 < _SOJA_MONTHS.length; i2++) {
+    if (_SOJA_MONTHS[i2].code === _F.code) { mi = i2; break; }
+  }
+  while (list.length < 9) {
+    var mo = _SOJA_MONTHS[mi % _SOJA_MONTHS.length];
+    if (mi > 0 && mi % _SOJA_MONTHS.length === 0) y++;
+    var yy2 = String(y).slice(-2);
+    var sym2 = 'ZS' + mo.code + yy2 + '.CBT';
+    if (!seen[sym2]) { seen[sym2]=1; list.push({sym:sym2, lbl:mo.name+yy2}); }
+    mi++;
+    if (mi > 50) break;
+  }
+  return list;
+})();
+var SOJA_CURVE_SYMS   = _sojaCurveAll.map(function(c){ return c.sym; });
+var SOJA_CURVE_LABELS = _sojaCurveAll.map(function(c){ return c.lbl; });
+
+var PRICE_SYMS = [_F.sym, _S.sym, _T.sym, 'ZSX27.CBT', _ZL.sym, 'CL=F','BZ=F','BRL=X', _ZC.sym, 'ZCZ26.CBT','ZCZ27.CBT'];
+PRICE_SYMS = PRICE_SYMS.concat(SOJA_CURVE_SYMS).filter(function(s,i,a){ return a.indexOf(s)===i; });
+
+var TARGETS = {};
+TARGETS[_F.sym] = { buy:null, sell:null };
+TARGETS[_S.sym] = { buy:1140, sell:1180 };
+TARGETS[_T.sym] = { buy:1140, sell:1180 };
+
+var PMETA = {};
+PMETA[_F.sym] = { sym:'ZS'+_F.code+_F.yy, exp:_F.lbl+' -- 1er futuro', unit:'c/bu', g:'soja' };
+PMETA[_S.sym] = { sym:'ZSX'+_yy,           exp:'Nov '+_yr,              unit:'c/bu', g:'soja' };
+PMETA[_T.sym] = { sym:'ZSF'+_yyNext,        exp:'Ene '+_yrNext,          unit:'c/bu', g:'soja' };
+PMETA[_ZL.sym] = { sym:_ZL.lbl, exp:'Aceite soja -- 1er futuro', unit:'c/lb', g:'other' };
+PMETA['CL=F']      = { sym:'WTI',      exp:'1er futuro',    unit:'USD/bbl', g:'other' };
+PMETA['BZ=F']      = { sym:'Brent',    exp:'1er futuro',    unit:'USD/bbl', g:'other' };
+PMETA['BRL=X']     = { sym:'USD/BRL',  exp:'Spot',          unit:'BRL/USD', g:'other' };
+PMETA['ZC=F']      = { sym:'Maíz ZC',  exp:'1er futuro',    unit:'c/bu',    g:'other' };
+PMETA[_ZC.sym]     = { sym:_ZC.lbl,     exp:'Maíz -- 1er futuro', unit:'c/bu', g:'other' };
 
 // ── STATE ─────────────────────────────────────────────────────────
 const prices  = {};
-const hist    = { ZSK26:[], ZSX26:[], ZSF27:[], BRL:[], WTI:[], CORN:[] };
-const SEED    = {
-  ZSK26:[1158,1160,1162,1161,1163,1163],
-  ZSX26:[1148,1150,1151,1150,1152,1152],
-  ZSF27:[1158,1160,1162,1161,1163,1163],
-  BRL:  [5.29,5.28,5.27,5.26,5.26,5.25],
-  WTI:  [73.8,74.0,74.1,74.0,74.2,74.1],
-  CORN: [444,445,446,445,447,446],
+const hist    = { ZS_F:[], ZS_S:[], ZS_T:[], BRL:[], WTI:[], CORN:[] };
+var _HK_F = 'ZS_F';
+var _HK_S = 'ZS_S';
+var _HK_T = 'ZS_T';
+
+const SEED = {
+  ZS_F:[1155,1155,1157,1156,1158,1158],
+  ZS_S:[1148,1148,1150,1149,1151,1151],
+  ZS_T:[1158,1158,1160,1159,1161,1161],
+  BRL: [5.29,5.28,5.27,5.26,5.26,5.25],
+  WTI: [73.8,74.0,74.1,74.0,74.2,74.1],
+  CORN:[444,445,446,445,447,446],
 };
+
 let pChart=null, cotChart=null, curveChart=null;
-let activeSym='ZSK26', cbN=0;
+let activeSym=_HK_F, cbN=0;
 
 // ── JSONP ─────────────────────────────────────────────────────────
 function jcall(params, ok, fail, ms) {
@@ -810,13 +911,15 @@ function refreshAll(){
 
 // ── PRICES ────────────────────────────────────────────────────────
 function fetchPrices(){
-  var allSyms = PRICE_SYMS.concat(SOJA_CURVE_SYMS).filter(function(s,i,a){ return a.indexOf(s)===i; });
-  jcall({section:'prices', symbols:allSyms.join(',')},
+  // PRICE_SYMS ya incluye la curva (deduplicado en la inicializacion)
+  jcall({section:'prices', symbols:PRICE_SYMS.join(',')},
     function(d){
       if(!d.ok) return;
       Object.keys(d.data).forEach(function(s){ prices[s]=d.data[s]; });
-      // historial sesión
-      var map={ZSK26:'ZSK26.CBT',ZSX26:'ZSX26.CBT',ZSF27:'ZSF27.CBT',BRL:'BRL=X',WTI:'CL=F',CORN:'ZC=F'};
+      // historial sesion con claves dinamicas
+      var map={};
+      map[_HK_F]=_F.sym; map[_HK_S]=_S.sym; map[_HK_T]=_T.sym;
+      map['BRL']='BRL=X'; map['WTI']='CL=F'; map['CORN']=_ZC.sym;
       Object.keys(map).forEach(function(k){
         var p=prices[map[k]]&&prices[map[k]].price;
         if(p!=null){ hist[k].push(p); if(hist[k].length>40) hist[k].shift(); }
@@ -863,18 +966,18 @@ function mkCard(sym){
     +mkBdg(sym,p)+'</div>';
 }
 function renderCards(){
-  document.getElementById('cards-soja').innerHTML=['ZSK26.CBT','ZSX26.CBT','ZSF27.CBT'].map(mkCard).join('');
-  document.getElementById('cards-other').innerHTML=['ZLK26.CBT','CL=F','BZ=F','BRL=X','ZC=F'].map(mkCard).join('');
+  document.getElementById('cards-soja').innerHTML=[_F.sym, _S.sym, _T.sym].map(mkCard).join('');
+  document.getElementById('cards-other').innerHTML=[_ZL.sym,'CL=F','BZ=F','BRL=X',_ZC.sym].map(mkCard).join('');
 }
 
 // ── ALERTS ────────────────────────────────────────────────────────
 function renderAlerts(){
   var als=[];
-  [['ZSX26.CBT','ZSX26'],['ZSF27.CBT','ZSF27']].forEach(function(x){
+  [[_S.sym, PMETA[_S.sym].sym],[_T.sym, PMETA[_T.sym].sym]].forEach(function(x){
     var p=prices[x[0]]&&prices[x[0]].price;
     if(p==null) return;
-    if(p<=1140) als.push({msg:x[1]+' '+fp(p)+' c/bu -- ✓ Target compra 1,140 alcanzado!',t:'good'});
-    else if(p>=1180) als.push({msg:x[1]+' '+fp(p)+' c/bu -- ✓ Target venta 1,180!',t:'good'});
+    if(p<=1140) als.push({msg:x[1]+' '+fp(p)+' c/bu -- check Target compra 1,140 alcanzado!',t:'good'});
+    else if(p>=1180) als.push({msg:x[1]+' '+fp(p)+' c/bu -- check Target venta 1,180!',t:'good'});
     else if((p-1140)/1140<0.01) als.push({msg:x[1]+' '+fp(p)+' c/bu -- cerca del target compra 1,140',t:'warn'});
   });
   var brl=prices['BRL=X']&&prices['BRL=X'].price;
@@ -888,14 +991,13 @@ function renderAlerts(){
 }
 
 // ── PRICE CHART ───────────────────────────────────────────────────
-var CCFG={
-  ZSK26:{sym:'ZSK26.CBT',color:'#0a6e45',buy:null,sell:null},
-  ZSX26:{sym:'ZSX26.CBT',color:'#1547a0',buy:1140,sell:1180},
-  ZSF27:{sym:'ZSF27.CBT',color:'#6d28d9',buy:1140,sell:1180},
-  BRL:  {sym:'BRL=X',    color:'#a05c10',buy:null,sell:null},
-  WTI:  {sym:'CL=F',     color:'#b83232',buy:null,sell:null},
-  CORN: {sym:'ZC=F',     color:'#d97706',buy:null,sell:null},
-};
+var CCFG={};
+CCFG[_HK_F]={sym:_F.sym,color:'#0a6e45',buy:null,sell:null};
+CCFG[_HK_S]={sym:_S.sym,color:'#1547a0',buy:1140,sell:1180};
+CCFG[_HK_T]={sym:_T.sym,color:'#6d28d9',buy:1140,sell:1180};
+CCFG['BRL']={sym:'BRL=X',    color:'#a05c10',buy:null,sell:null};
+CCFG['WTI']={sym:'CL=F',     color:'#b83232',buy:null,sell:null};
+CCFG['CORN']={sym:_ZC.sym,   color:'#d97706',buy:null,sell:null};
 
 function initPChart(){
   Object.keys(SEED).forEach(function(k){ hist[k]=[].concat(SEED[k]); });
@@ -1159,20 +1261,83 @@ function renderNewsError(){
 }
 
 // ── CORRELACIONES ─────────────────────────────────────────────────
-function renderCorr(){
-  var corrs=[
-    {l:'Aceite de soja (ZL)',v:.94,c:'#0a6e45'},
-    {l:'Petróleo WTI (CL)',  v:.71,c:'#1547a0'},
-    {l:'Maíz CBOT (ZC)',     v:.82,c:'#a05c10'},
-    {l:'Soja AR (MATBA)',    v:.88,c:'#6d28d9'},
-    {l:'USD/BRL',            v:.63,c:'#b83232'},
+// ── CORRELACIONES CALCULADAS ─────────────────────────────────────
+function pearsonCorr(a, b) {
+  // Calcula correlacion de Pearson sobre retornos log diarios
+  // Alinea por fecha usando el indice de 'ZS=F' como base
+  var n = Math.min(a.length, b.length);
+  if (n < 10) return null;
+  // Calcular retornos log
+  var ra = [], rb = [];
+  for (var i = 1; i < n; i++) {
+    if (a[i-1] > 0 && a[i] > 0 && b[i-1] > 0 && b[i] > 0) {
+      ra.push(Math.log(a[i] / a[i-1]));
+      rb.push(Math.log(b[i] / b[i-1]));
+    }
+  }
+  var m = ra.length;
+  if (m < 10) return null;
+  var ma = ra.reduce(function(s,v){return s+v;},0)/m;
+  var mb = rb.reduce(function(s,v){return s+v;},0)/m;
+  var num = 0, sa = 0, sb = 0;
+  for (var j = 0; j < m; j++) {
+    var da = ra[j]-ma, db = rb[j]-mb;
+    num += da*db; sa += da*da; sb += db*db;
+  }
+  if (sa === 0 || sb === 0) return null;
+  return Math.round(num / Math.sqrt(sa*sb) * 100) / 100;
+}
+
+function alignSeries(baseData, otherData) {
+  // Alinea dos series por fecha (campo 't' = timestamp), devuelve arrays de cierres alineados
+  if (!baseData || !otherData || !baseData.length || !otherData.length) return [[], []];
+  var mapOther = {};
+  otherData.forEach(function(d){ mapOther[d.t] = d.c; });
+  var aArr = [], bArr = [];
+  baseData.forEach(function(d){
+    if (mapOther[d.t] != null) { aArr.push(d.c); bArr.push(mapOther[d.t]); }
+  });
+  return [aArr, bArr];
+}
+
+function renderCorr() {
+  var panel = document.getElementById('corr-panel');
+  if (!panel) return;
+
+  var base = histData['ZS=F'] || histData[_F.sym] || [];
+
+  var pairs = [
+    { sym: _ZL.sym,   label: 'Aceite soja ('+_ZL.lbl+')', color: '#0a6e45', fallback: 0.94 },
+    { sym: 'CL=F',    label: 'Petróleo WTI',               color: '#b83232', fallback: 0.71 },
+    { sym: _ZC.sym,   label: 'Maíz ('+_ZC.lbl+')',         color: '#a05c10', fallback: 0.82 },
+    { sym: 'BRL=X',   label: 'USD/BRL',                    color: '#1547a0', fallback: 0.63 },
+    { sym: _S.sym,    label: 'Soja Nov ('+_S.lbl+')',       color: '#6d28d9', fallback: 0.99 },
   ];
-  document.getElementById('corr-panel').innerHTML=corrs.map(function(c){
-    return '<div class="corr-r">'
-      +'<span class="corr-l">'+c.l+'</span>'
-      +'<div class="corr-bg"><div class="corr-b" style="width:'+(c.v*100).toFixed(0)+'%;background:'+c.c+'"></div></div>'
-      +'<span class="corr-v">'+c.v.toFixed(2)+'</span></div>';
-  }).join('');
+
+  var hasCalc = false;
+  var html = '';
+  pairs.forEach(function(p) {
+    var aligned = alignSeries(base, histData[p.sym] || []);
+    var corr = pearsonCorr(aligned[0], aligned[1]);
+    var isCalc = corr !== null;
+    if (isCalc) hasCalc = true;
+    var v = corr !== null ? corr : p.fallback;
+    var pct = Math.abs(v) * 100;
+    var col = v >= 0.8 ? '#0a6e45' : v >= 0.5 ? '#1547a0' : v >= 0 ? '#a05c10' : '#b83232';
+    html += '<div class="corr-r">'
+      + '<span class="corr-l">'+p.label+'</span>'
+      + '<div class="corr-bg"><div class="corr-b" style="width:'+pct.toFixed(0)+'%;background:'+col+'"></div></div>'
+      + '<span class="corr-v" style="color:'+(v<0?'#b83232':'var(--text1)')+'">'+v.toFixed(2)+'</span>'
+      + '</div>';
+  });
+
+  // Badge y nota al pie
+  var badge = panel.parentElement.querySelector('.cb-ref');
+  if (badge) badge.textContent = hasCalc ? 'calculado · '+base.length+'d' : 'referencial';
+  var nota = '<div style="font-size:10px;color:var(--text3);margin-top:8px;">'+
+    (hasCalc ? 'Pearson sobre retornos log diarios · '+base.length+' días' : 'Sin historial — valores referenciales')+
+    '</div>';
+  panel.innerHTML = html + nota;
 }
 
 // ── PAGE SWITCHER ─────────────────────────────────────────────────
@@ -2021,8 +2186,8 @@ function updateRatio() {
   var syms = getRatioSymbols();
   var zs = prices[syms.soja] && prices[syms.soja].price;
   var zc = prices[syms.corn] && prices[syms.corn].price;
-  // Fallback al contrato genérico si el específico no cargó aún
-  if (!zs) zs = prices['ZSX26.CBT'] && prices['ZSX26.CBT'].price;
+  // Fallback al contrato dinamico si el especifico no cargó aún
+  if (!zs) zs = prices[_S.sym] && prices[_S.sym].price;
   if (!zc) zc = prices['ZCZ26.CBT'] && prices['ZCZ26.CBT'].price;
   if (!zs || !zc || zc === 0) return;
   var ratio = Math.round((zs/zc)*100)/100;
@@ -2164,20 +2329,19 @@ var histActive  = 'ZS=F';
 var histChart   = null;
 
 // Targets por símbolo para mostrar líneas en el gráfico
-var HIST_TARGETS = {
-  'ZSX26.CBT': { buy:1140, sell:1180, label:'ZSX26' },
-  'ZSF27.CBT': { buy:1140, sell:1180, label:'ZSF27' },
-  'BRL=X':     { buy:null, sell:null, label:'USD/BRL' },
-};
+var HIST_TARGETS = {};
+HIST_TARGETS[_S.sym] = { buy:1140, sell:1180, label:PMETA[_S.sym].sym };
+HIST_TARGETS[_T.sym] = { buy:1140, sell:1180, label:PMETA[_T.sym].sym };
+HIST_TARGETS['BRL=X'] = { buy:null, sell:null, label:'USD/BRL' };
 
-var HIST_COLORS = {
-  'ZS=F':     '#0a6e45',
-  'ZSX26.CBT':'#1547a0',
-  'ZSF27.CBT':'#6d28d9',
-  'BRL=X':    '#a05c10',
-  'CL=F':     '#b83232',
-  'ZC=F':     '#d97706',
-};
+var HIST_COLORS = {};
+HIST_COLORS['ZS=F']   = '#0a6e45';
+HIST_COLORS[_F.sym]   = '#0a6e45';
+HIST_COLORS[_S.sym]   = '#1547a0';
+HIST_COLORS[_T.sym]   = '#6d28d9';
+HIST_COLORS['BRL=X']  = '#a05c10';
+HIST_COLORS['CL=F']   = '#b83232';
+HIST_COLORS['ZC=F']   = '#d97706';
 
 function initHistChart() {
   histChart = new Chart(document.getElementById('histChart').getContext('2d'), {
@@ -2273,7 +2437,7 @@ function switchHist(sym, name, btn) {
 }
 
 function fetchAllHistory() {
-  var syms = ['ZS=F','ZSX26.CBT','ZSF27.CBT','BRL=X','CL=F','ZC=F'];
+  var syms = ['ZS=F', _F.sym, _S.sym, _T.sym, _ZL.sym, _ZC.sym, 'BRL=X','CL=F'].filter(function(s,i,a){ return a.indexOf(s)===i; });
   // Traer todos de una sola llamada al script
   jcall({ section:'history', symbols: syms.join(',') },
     function(d) {
@@ -2286,7 +2450,9 @@ function fetchAllHistory() {
       // Renderizar el activo por defecto
       renderHistChart(histActive);
       var badge = document.getElementById('hist-badge');
-      if (badge) badge.textContent = (histData[histActive]||[]).length + ' días . Yahoo Finance';
+      if (badge) badge.textContent = (histData[histActive]||[]).length + ' dias . Yahoo Finance';
+      // Recalcular correlaciones con datos frescos
+      renderCorr();
     },
     function(err) {
       document.getElementById('hist-badge').textContent = 'error -- reintentando...';
@@ -2298,6 +2464,17 @@ function fetchAllHistory() {
 
 
 window.addEventListener('DOMContentLoaded', function(){
+  // Parchar labels de tabs de historial con contratos dinamicos
+  var htabS = document.getElementById('htab-s');
+  var htabT = document.getElementById('htab-t');
+  if (htabS) {
+    htabS.textContent = PMETA[_S.sym].sym;
+    htabS.setAttribute('onclick','switchHist("'+_S.sym+'","'+PMETA[_S.sym].sym+'",this)');
+  }
+  if (htabT) {
+    htabT.textContent = PMETA[_T.sym].sym;
+    htabT.setAttribute('onclick','switchHist("'+_T.sym+'","'+PMETA[_T.sym].sym+'",this)');
+  }
   renderCorr();
   renderCards();
   setTimeout(function(){
@@ -2761,7 +2938,7 @@ function renderBasisChart(loc) {
       <input id="gdm-chi_spot" type="number" step="0.25" value="1194.25">
     </div>
     <div class="inp-group">
-      <label>Chicago Ene 27 (usc/bu) <span class="tag live">LIVE</span></label>
+      <label>Chicago <span id="gdm-lbl-chifwd-input">3er futuro</span> (usc/bu) <span class="tag live">LIVE</span></label>
       <input id="gdm-chi_fwd" type="number" step="0.25" value="1210.00">
     </div>
     <div class="inp-group">
@@ -2973,10 +3150,10 @@ function fetchLive() {
     calcular();
   }, null);
 
-  // 4. Chicago Ene27
-  jcall({section:'prices', symbols:'ZSF27.CBT'}, function(d) {
+  // 4. Chicago forward (3er contrato activo)
+  jcall({section:'prices', symbols:_T.sym}, function(d) {
     var r = unwrap(d);
-    var p = r && r['ZSF27.CBT'] && r['ZSF27.CBT'].price;
+    var p = r && r[_T.sym] && r[_T.sym].price;
     if (p) {
       document.getElementById('chi_fwd').value = p.toFixed(2);
       setDot('chifwd',true); setLbl('chifwd', p.toFixed(2)+' usc/bu');
@@ -3271,13 +3448,13 @@ function gdmFetchLive() {
     gdmCalc();
   }, null);
 
-  // 4. Chicago Ene27
-  gdmJcall({section:'prices', symbols:'ZSF27.CBT'}, function(d) {
+  // 4. Chicago forward (3er contrato activo)
+  gdmJcall({section:'prices', symbols:_T.sym}, function(d) {
     var r = gdmUnwrap(d);
-    var p = r && r['ZSF27.CBT'] && r['ZSF27.CBT'].price;
+    var p = r && r[_T.sym] && r[_T.sym].price;
     if (p) {
       document.getElementById('gdm-chi_fwd').value = p.toFixed(2);
-      gdmSetDot('chifwd',true); gdmSetLbl('chifwd', p.toFixed(2)+' usc/bu');
+      gdmSetDot('chifwd',true); gdmSetLbl('chifwd', p.toFixed(2)+' usc/bu ('+PMETA[_T.sym].sym+')');
     }
     gdmCalc();
   }, null);
@@ -3293,13 +3470,21 @@ function gdmCalc() {
 
   var { factor } = gdmCalcFactor();
 
-  // Premio spot: derivado del precio físico FOB
-  // Precio Puerto spot (R$/sc) = (chicago_spot + premio_spot) × GDM_F × tc × 0.06
-  // → premio_spot (usc/bu) = gdmRscToUsc(precio_fob_spot, tc) - chicago_spot
-  // Usamos paranaguá y Santos directamente de NA
   // Premio spot: valor manual ingresado por el usuario
   var premPnagSpot = +document.getElementById('gdm-prem_pnag_spot').value;
   var premSantSpot = +document.getElementById('gdm-prem_sant_spot').value;
+
+  // Persistir premios manuales en localStorage
+  try {
+    localStorage.setItem('cdsk_gdm_premios', JSON.stringify({
+      pnag_spot: premPnagSpot,
+      sant_spot: premSantSpot,
+      pnag_fwd:  premPnagFwd,
+      sant_fwd:  premSantFwd,
+      ts: new Date().toISOString()
+    }));
+  } catch(e) {}
+
   gdmSetDot('premio',true);
   gdmSetLbl('premio', 'Pnag: '+premPnagSpot.toFixed(1)+' · Sant: '+premSantSpot.toFixed(1)+' usc/bu');
 
@@ -3453,10 +3638,39 @@ function gdmCalc() {
 function gdmInit() {
   if (!window._gdmLoaded) {
     window._gdmLoaded = true;
+
+    // Restaurar premios manuales guardados
+    try {
+      var saved = localStorage.getItem('cdsk_gdm_premios');
+      if (saved) {
+        var p = JSON.parse(saved);
+        if (p.pnag_spot != null) document.getElementById('gdm-prem_pnag_spot').value = p.pnag_spot;
+        if (p.sant_spot != null) document.getElementById('gdm-prem_sant_spot').value = p.sant_spot;
+        if (p.pnag_fwd  != null) document.getElementById('gdm-prem_pnag_fwd').value  = p.pnag_fwd;
+        if (p.sant_fwd  != null) document.getElementById('gdm-prem_sant_fwd').value  = p.sant_fwd;
+        // Mostrar timestamp de ultima edicion manual
+        var tsEl = document.getElementById('gdm-ts');
+        if (tsEl && p.ts) {
+          var d = new Date(p.ts);
+          tsEl.textContent = 'Premios guardados: ' + d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+        }
+      }
+    } catch(e) {}
+
+    var lblFwd = document.getElementById('gdm-lbl-chifwd-input');
+    if (lblFwd) lblFwd.textContent = PMETA[_T.sym].sym + ' (' + _T.lbl + ')';
+
     var el1 = document.getElementById('gdm-fecha_fwd');
     var el2 = document.getElementById('gdm-tna');
     if (el1) el1.addEventListener('change', gdmCalc);
     if (el2) el2.addEventListener('change', gdmCalc);
+
+    // Guardar premios al editar directamente (sin esperar Recalcular)
+    ['gdm-prem_pnag_spot','gdm-prem_sant_spot','gdm-prem_pnag_fwd','gdm-prem_sant_fwd'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', gdmCalc);
+    });
+
     gdmFetchLive();
   }
 }
