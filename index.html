@@ -1495,6 +1495,15 @@ function fetchSmf3() {
   jcall({ section: 'smf_macro' }, function(d) {
     if (!d.ok || !d.data) return;
     var r   = d.data;
+    // ── Señal basada SOLO en posición vs histórico ──────────────
+    // No importa si estamos netos comprados o vendidos; importa
+    // cuán comprados/vendidos estamos respecto al rango histórico
+    // de la misma semana del año (relPos = % del rango histórico).
+    //   relPos < 25  -> extremo corto -> alcista (verde)
+    //   relPos > 75  -> extremo largo -> bajista (rojo)
+    //   resto        -> rango normal  -> neutral (amarillo)
+    var relPos = (r.historical && r.historical.relPos != null) ? r.historical.relPos : null;
+    r.sig = relPos == null ? 'n' : (relPos < 25 ? 'g' : relPos > 75 ? 'r' : 'y');
     SMF_LIVE[3] = r;
     var net  = r.cot ? r.cot.net      : null;
     var wkd  = r.cot ? r.cot.weekChange : null;
